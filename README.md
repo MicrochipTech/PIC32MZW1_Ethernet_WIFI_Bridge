@@ -49,12 +49,31 @@ Below are the key points to consider while creating a bridging project:
       * The bridge knows where various hosts are by looking at the source MAC address of the incoming packets
    * Otherwise it will be forwarded on all interfaces
 
+## L2 Bridging Implementation
+
+**PIC32MZW1/WFI32E set as an AP can be used as a Wireless Bridge connecting multiple wireless and wired networks to form a single network.**
+
+DHCP Server can be either in WFI32 device or outside. It is important that only one DCHPS exists in the setup.
+
+<p align="center">
+<img src="images/bridging_setup.png" width=576>
+</p>
+
+The L2 bridging implementation is according to the IEEE 802.1D - 2004 standard document. It is recommended to read the standard to understand the purpose and implementation of the software module.
+
+> The command "bridge" has a help in it.  It supports statistics, status or FDB entries. These commands are very basic and simple.
+
+<p align="center">
+<img src="images/bridge_cmd.png" width=320>
+</p>
+
+In the L2 bridging software implementation, a single task for the bridge operates, the one at the MAC level. The stack does not differentiate between Ethernet and Wi-Fi MACs, they are all the same. It does not matter how many MACs we bridge, the code is the same, just one bridge module dealing with all the virtual MACs for each interface.
 
 ## Software requirement
 
-PIC32MZW1 can be used as a Wireless Bridge connecting multiple wireless and wired networks to form a single network.
+The L2 bridging functionality can be enabled or disabled using MPLAB Harmony Configurator (MHC) with the NET repo (3.7.1 or above) and wireless_wifi repo (3.4.0 or above). 
 
-The bridging functionality can be enabled or disabled using MPLAB Harmony Configurator (MHC) with the NET repo (3.7.1 or above) and wireless_wifi repo (3.4.0 or above).
+> Checkout the following files from the Net repository (in the folder `net/tcpip`) for more information on the bridge implementaion: <br>`tcpip_mac_bridge.c`, <br>`tcpip_mac_bridge_manager.h`, <br>`tcpip_mac_bridge_private.h`, <br>`tcpip_mac_bridge.h`
 
 The sample project has been created and tested with the following Software Development Tools:
 - MPLAB X IDE v6.00
@@ -110,6 +129,8 @@ USB-to-UART cable between the computer and GPIO Header UART1 pins (Rx, GND, Tx) 
 <p align="center">
 <img src="images/mhc_12.png" width=520>
 </p>
+
+> DHCP Server can be either in WFI32 device or outside. It is important that only one DCHPS exists in the setup
 
 * Under **Project Graph > APPLICATION LAYER**:
    * Select **TCP/IP Application Layer Configuration**
@@ -169,6 +190,8 @@ USB-to-UART cable between the computer and GPIO Header UART1 pins (Rx, GND, Tx) 
 ## Try it
 
 1. Build and program the code
+   * located in `/firmware` folder with DCHP Server running on WFI32E
+   * located in `/firmware_wo_dhcp` folder with DCHP Server running outside WFI32E
 2. Plug the Ethernet cable from the PHY Daughter board to your own Home Router
 3. Reset the WFI32E Curiosity board
 <p align="center">
@@ -195,3 +218,4 @@ Run iperf server
 .............................................
 <img src="images/iperf_download.PNG" width=120>
 </p>
+
