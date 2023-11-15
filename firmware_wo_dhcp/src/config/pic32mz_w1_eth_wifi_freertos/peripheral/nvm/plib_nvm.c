@@ -48,6 +48,7 @@
 // *****************************************************************************
 
 #include <string.h>
+#include "interrupts.h"
 #include "sys/kmem.h"
 #include "plib_nvm.h"
 
@@ -83,6 +84,13 @@ typedef enum
 #define NVM_INTERRUPT_ENABLE_MASK   0x40000000
 #define NVM_INTERRUPT_FLAG_MASK     0x40000000
 
+typedef struct
+{
+    NVM_CALLBACK CallbackFunc;
+    uintptr_t Context;
+}nvmCallbackObjType;
+
+volatile static nvmCallbackObjType nvmCallbackObj;
 /* ************************************************************************** */
 /* ************************************************************************** */
 // Section: Local Functions                                                   */
@@ -95,33 +103,30 @@ typedef enum
 // *****************************************************************************
 // *****************************************************************************
 
-NVM_CALLBACK nvmCallbackFunc;
-
-uintptr_t nvmContext;
-
 void NVM_CallbackRegister( NVM_CALLBACK callback, uintptr_t context )
 {
     /* Register callback function */
-    nvmCallbackFunc    = callback;
-    nvmContext         = context;
+    nvmCallbackObj.CallbackFunc    = callback;
+    nvmCallbackObj.Context         = context;
 }
 
-void NVM_InterruptHandler( void )
+void __attribute__((used)) NVM_InterruptHandler( void )
 {
     IFS0CLR = NVM_INTERRUPT_FLAG_MASK;
 
-    if(nvmCallbackFunc != NULL)
+    if(nvmCallbackObj.CallbackFunc != NULL)
     {
-        nvmCallbackFunc(nvmContext);
+        uintptr_t context = nvmCallbackObj.Context;
+        nvmCallbackObj.CallbackFunc(context);
     }
 }
 
 static void NVM_WriteUnlockSequence( void )
 {
     // Write the unlock key sequence
-    NVMKEY = 0x0;
-    NVMKEY = NVM_UNLOCK_KEY1;
-    NVMKEY = NVM_UNLOCK_KEY2;
+    NVMKEY = 0x0U;
+    NVMKEY = (uint32_t)NVM_UNLOCK_KEY1;
+    NVMKEY = (uint32_t)NVM_UNLOCK_KEY2;
 }
 
 static void NVM_StartOperationAtAddress( uint32_t address,  NVM_OPERATION_MODE operation )
@@ -163,7 +168,7 @@ static void NVM_StartOperationAtAddress( uint32_t address,  NVM_OPERATION_MODE o
     // Start the operation
     NVMCONSET = _NVMCON_WR_MASK;
 
-    __builtin_mtc0(12, 0, processorStatus);
+    __builtin_mtc0(12U, 0U, processorStatus);
 
     IEC0SET   = NVM_INTERRUPT_ENABLE_MASK;
 }
@@ -179,10 +184,11 @@ void NVM_Initialize( void )
     NVM_StartOperationAtAddress( NVMADDR,  NO_OPERATION );
 }
 
+
 bool NVM_Read( uint32_t *data, uint32_t length, const uint32_t address )
 {
-    memcpy((void *)data, (void *)KVA0_TO_KVA1(address), length);
-
+    /* MISRA C-2012 Rule 11.6 violated 1 time below. Deviation record ID - H3_MISRAC_2012_R_11_6_DR_1*/
+    (void) memcpy(data, (uint32_t*)KVA0_TO_KVA1(address), length);
     return true;
 }
 
@@ -255,7 +261,7 @@ void NVM_ProgramFlashWriteProtect( uint32_t laddress, uint32_t haddress )
     NVMPWPLT = (laddress & _NVMPWPLT_PWPLT_MASK) | _NVMPWPLT_ULOCK_MASK;
     NVMPWPGTE = (haddress & _NVMPWPGTE_PWPGTE_MASK) | _NVMPWPGTE_ULOCK_MASK;
 
-    __builtin_mtc0(12, 0, processorStatus);
+    __builtin_mtc0(12U, 0U, processorStatus);
 }
 
 void NVM_ProgramFlashWriteProtectLock( void )
@@ -270,5 +276,5 @@ void NVM_ProgramFlashWriteProtectLock( void )
     NVMPWPLTCLR = _NVMPWPLT_ULOCK_MASK;
     NVMPWPGTECLR = _NVMPWPGTE_ULOCK_MASK;
 
-    __builtin_mtc0(12, 0, processorStatus);
+    __builtin_mtc0(12U, 0U, processorStatus);
 }

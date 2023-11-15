@@ -1,31 +1,33 @@
-/*******************************************************************************
-Copyright (c) 2019 released Microchip Technology Inc. All rights reserved.
+/*
+Copyright (C) 2020-2023, Microchip Technology Inc., and its subsidiaries. All rights reserved.
 
-Microchip licenses to you the right to use, modify, copy and distribute
-Software only when embedded on a Microchip microcontroller or digital signal
-controller that is integrated into your product or third party product
-(pursuant to the sublicense terms in the accompanying license agreement).
+The software and documentation is provided by microchip and its contributors
+"as is" and any express, implied or statutory warranties, including, but not
+limited to, the implied warranties of merchantability, fitness for a particular
+purpose and non-infringement of third party intellectual property rights are
+disclaimed to the fullest extent permitted by law. In no event shall microchip
+or its contributors be liable for any direct, indirect, incidental, special,
+exemplary, or consequential damages (including, but not limited to, procurement
+of substitute goods or services; loss of use, data, or profits; or business
+interruption) however caused and on any theory of liability, whether in contract,
+strict liability, or tort (including negligence or otherwise) arising in any way
+out of the use of the software and documentation, even if advised of the
+possibility of such damage.
 
-You should refer to the license agreement accompanying this Software for
-additional information regarding your rights and obligations.
-
-SOFTWARE AND DOCUMENTATION ARE PROVIDED AS IS WITHOUT WARRANTY OF ANY KIND,
-EITHER EXPRESS OR IMPLIED, INCLUDING WITHOUT LIMITATION, ANY WARRANTY OF
-MERCHANTABILITY, TITLE, NON-INFRINGEMENT AND FITNESS FOR A PARTICULAR PURPOSE.
-IN NO EVENT SHALL MICROCHIP OR ITS LICENSORS BE LIABLE OR OBLIGATED UNDER
-CONTRACT, NEGLIGENCE, STRICT LIABILITY, CONTRIBUTION, BREACH OF WARRANTY, OR
-OTHER LEGAL EQUITABLE THEORY ANY DIRECT OR INDIRECT DAMAGES OR EXPENSES
-INCLUDING BUT NOT LIMITED TO ANY INCIDENTAL, SPECIAL, INDIRECT, PUNITIVE OR
-CONSEQUENTIAL DAMAGES, LOST PROFITS OR LOST DATA, COST OF PROCUREMENT OF
-SUBSTITUTE GOODS, TECHNOLOGY, SERVICES, OR ANY CLAIMS BY THIRD PARTIES
-(INCLUDING BUT NOT LIMITED TO ANY DEFENSE THEREOF), OR OTHER SIMILAR COSTS.
- *******************************************************************************/
+Except as expressly permitted hereunder and subject to the applicable license terms
+for any third-party software incorporated in the software and any applicable open
+source software license terms, no license or other rights, whether express or
+implied, are granted under any patent or other intellectual property rights of
+Microchip or any third party.
+*/
 
 #ifndef _DRV_PIC32MZW1_H
 #define _DRV_PIC32MZW1_H
 
 #include <stdint.h>
 #include <stdbool.h>
+
+extern const uint8_t pic32mzw_rsr_pkt_num;
 
 #define DRV_PIC32MZW_MAX_SCAN_TIME                  1500
 #define DRV_PIC32MZW_MIN_SCAN_TIME                  10
@@ -38,10 +40,12 @@ SUBSTITUTE GOODS, TECHNOLOGY, SERVICES, OR ANY CLAIMS BY THIRD PARTIES
 #define DRV_PIC32MZW_SCAN_MAX_NUM_PROBE             2
 #define DRV_PIC32MZW_AP_NUM_STA_SUPPORTED           8
 #define DRV_PIC32MZW_REGDOMAIN_MAX_NAME_LEN         6
-#define DRV_PIC32MZW_REGDOMAIN_RES_LEN              14
-#define DRV_PIC32MZW_PS_LISTEN_INTERVAL				8
+#define DRV_PIC32MZW_REGDOMAIN_RES_LEN              16
+#define DRV_PIC32MZW_PS_INFO_LEN                    6
+#define DRV_PIC32MZW_DEFAULT_PS_LISTEN_INTERVAL     10
 #define DRV_PIC32MZW_MAX_HIDDEN_SITES               4
 #define DRV_PIC32MZW_AP_REKEY_MIN_PERIOD            60
+#define DRV_PIC32MZW_PKT_BUFF_NUM                   pic32mzw_rsr_pkt_num
 //#define DRV_PIC32MZW_TRACK_MEMORY_ALLOC
 
 #define DRV_PIC32MZW_POWER_ON_CAL_CONFIG            0x01
@@ -49,8 +53,9 @@ SUBSTITUTE GOODS, TECHNOLOGY, SERVICES, OR ANY CLAIMS BY THIRD PARTIES
 #define DRV_PIC32MZW_GAIN_TABLE_CONFIG              0x04
 #define DRV_PIC32MZW_MAC_ADDRESS_CONFIG             0x08
 
-#define DRV_PIC32MZW_MAX_VSIE_DATA_LEN              1000
-#define DRV_PIC32MZW_VSIE_DATA_SIZE_FIELD_LEN       2
+#define DRV_PIC32MZW_IE_DATA_LEN_MAX                1000
+#define DRV_PIC32MZW_IE_DATA_SIZE_FIELD_LEN         2
+#define DRV_PIC32MZW_IE_DATA_OFFSET_RX              8
 
 #define DRV_PIC32MZW_LibraryInfo(NAME)  DRV_PIC32MZW_LibraryInfo_##NAME
 
@@ -111,8 +116,9 @@ typedef enum
     DRV_PIC32MZW_11I_1X             = 0x0400,
     DRV_PIC32MZW_11I_PSK            = 0x0800,
     DRV_PIC32MZW_11I_SAE            = 0x1000,
+    DRV_PIC32MZW_11I_TD             = 0x2000,
     DRV_PIC32MZW_AP                 = 0x8000,   // Indicates whether the settings are intended for STA or AP mode
-    DRV_PIC32MZW_RSNA_MASK          = 0x1FF0,   // Mask of bits linked to RSNA's
+    DRV_PIC32MZW_RSNA_MASK          = 0x3FF0,   // Mask of bits linked to RSNA's
 } DRV_PIC32MZW_11I_MASK;
 
 typedef struct

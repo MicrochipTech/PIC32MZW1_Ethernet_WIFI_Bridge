@@ -51,8 +51,9 @@
 #include "crypto/crypto.h"
 #include "driver/ba414e/drv_ba414e.h"
 #include "driver/ethmac/drv_ethmac.h"
-#include "peripheral/nvm/plib_nvm.h"
+#include "system/net/sys_net.h"
 #include "system/time/sys_time.h"
+#include "peripheral/nvm/plib_nvm.h"
 #include "peripheral/coretimer/plib_coretimer.h"
 #include "peripheral/uart/plib_uart1.h"
 #include "system/int/sys_int.h"
@@ -68,6 +69,10 @@
 #include "peripheral/evic/plib_evic.h"
 #include "driver/miim/drv_miim.h"
 #include "wolfssl/wolfcrypt/port/pic32/crypt_wolfcryptcb.h"
+#include "net_pres/pres/net_pres.h"
+#include "net_pres/pres/net_pres_encryptionproviderapi.h"
+#include "net_pres/pres/net_pres_transportapi.h"
+#include "net_pres/pres/net_pres_socketapi.h"
 #include "driver/wifi/pic32mzw1/include/wdrv_pic32mzw_api.h"
 #include "system/wifi/sys_wifi.h"
 #include "system/console/sys_console.h"
@@ -85,6 +90,12 @@ extern "C" {
 
 #endif
 // DOM-IGNORE-END
+
+/* Device Information */
+#define DEVICE_NAME			 "PIC32MZ1025W104132"
+#define DEVICE_ARCH			 "MIPS"
+#define DEVICE_FAMILY		 "PIC32MZW"
+#define DEVICE_SERIES		 "PIC32MZW"
 
 /* CPU clock frequency */
 #define CPU_CLOCK_FREQUENCY 200000000
@@ -207,9 +218,12 @@ typedef struct
 
 
     SYS_MODULE_OBJ  tcpip;
+   SYS_MODULE_OBJ  drvMiim_0;
 
-    SYS_MODULE_OBJ  drvMiim;
     SYS_MODULE_OBJ  sysDebug;
+
+    SYS_MODULE_OBJ  netPres;
+
 
     SYS_MODULE_OBJ  drvWifiPIC32MZW1;
     SYS_MODULE_OBJ  syswifi;

@@ -12,28 +12,28 @@
  *******************************************************************************/
 
 //DOM-IGNORE-BEGIN
-/*******************************************************************************
-Copyright (C) 2020-21 released Microchip Technology Inc.  All rights reserved.
+/*
+Copyright (C) 2020-2023, Microchip Technology Inc., and its subsidiaries. All rights reserved.
 
-Microchip licenses to you the right to use, modify, copy and distribute
-Software only when embedded on a Microchip microcontroller or digital signal
-controller that is integrated into your product or third party product
-(pursuant to the sublicense terms in the accompanying license agreement).
+The software and documentation is provided by microchip and its contributors
+"as is" and any express, implied or statutory warranties, including, but not
+limited to, the implied warranties of merchantability, fitness for a particular
+purpose and non-infringement of third party intellectual property rights are
+disclaimed to the fullest extent permitted by law. In no event shall microchip
+or its contributors be liable for any direct, indirect, incidental, special,
+exemplary, or consequential damages (including, but not limited to, procurement
+of substitute goods or services; loss of use, data, or profits; or business
+interruption) however caused and on any theory of liability, whether in contract,
+strict liability, or tort (including negligence or otherwise) arising in any way
+out of the use of the software and documentation, even if advised of the
+possibility of such damage.
 
-You should refer to the license agreement accompanying this Software for
-additional information regarding your rights and obligations.
-
-SOFTWARE AND DOCUMENTATION ARE PROVIDED AS IS WITHOUT WARRANTY OF ANY KIND,
-EITHER EXPRESS OR IMPLIED, INCLUDING WITHOUT LIMITATION, ANY WARRANTY OF
-MERCHANTABILITY, TITLE, NON-INFRINGEMENT AND FITNESS FOR A PARTICULAR PURPOSE.
-IN NO EVENT SHALL MICROCHIP OR ITS LICENSORS BE LIABLE OR OBLIGATED UNDER
-CONTRACT, NEGLIGENCE, STRICT LIABILITY, CONTRIBUTION, BREACH OF WARRANTY, OR
-OTHER LEGAL EQUITABLE THEORY ANY DIRECT OR INDIRECT DAMAGES OR EXPENSES
-INCLUDING BUT NOT LIMITED TO ANY INCIDENTAL, SPECIAL, INDIRECT, PUNITIVE OR
-CONSEQUENTIAL DAMAGES, LOST PROFITS OR LOST DATA, COST OF PROCUREMENT OF
-SUBSTITUTE GOODS, TECHNOLOGY, SERVICES, OR ANY CLAIMS BY THIRD PARTIES
-(INCLUDING BUT NOT LIMITED TO ANY DEFENSE THEREOF), OR OTHER SIMILAR COSTS.
- *******************************************************************************/
+Except as expressly permitted hereunder and subject to the applicable license terms
+for any third-party software incorporated in the software and any applicable open
+source software license terms, no license or other rights, whether express or
+implied, are granted under any patent or other intellectual property rights of
+Microchip or any third party.
+*/
 //DOM-IGNORE-END
 
 // *****************************************************************************
@@ -101,7 +101,7 @@ WDRV_PIC32MZW_STATUS WDRV_PIC32MZW_APStart
     OSAL_CRITSECT_DATA_TYPE critSect;
 
     /* Ensure the driver handle and user pointer is valid. */
-    if ((DRV_HANDLE_INVALID == handle) || (NULL == pDcpt) || (NULL == pDcpt->pCtrl) || (NULL == pBSSCtx))
+    if ((DRV_HANDLE_INVALID == handle) || (NULL == pDcpt) || (NULL == pDcpt->pCtrl))
     {
         return WDRV_PIC32MZW_STATUS_INVALID_ARG;
     }
@@ -112,28 +112,39 @@ WDRV_PIC32MZW_STATUS WDRV_PIC32MZW_APStart
         return WDRV_PIC32MZW_STATUS_NOT_OPEN;
     }
 
+    if ((NULL == pBSSCtx) && (NULL == pAuthCtx))
+    {
+        /* Allow callback to be set/changed, but only if not trying to change
+         BSS/Auth settings. */
+        pDcpt->pCtrl->pfConnectNotifyCB = pfNotifyCallback;
+        return WDRV_PIC32MZW_STATUS_OK;
+    }
+
     /* Ensure RF and MAC is configured */
     if (WDRV_PIC32MZW_RF_MAC_MIN_REQ_CONFIG != (pDcpt->pCtrl->rfMacConfigStatus & WDRV_PIC32MZW_RF_MAC_MIN_REQ_CONFIG))
     {
         return WDRV_PIC32MZW_STATUS_RF_MAC_CONFIG_NOT_VALID;
     }
 
-    /* Validate BSS context. */
+    /* Ensure the BSS context is valid. */
     if (false == WDRV_PIC32MZW_BSSCtxIsValid(pBSSCtx, false))
     {
         return WDRV_PIC32MZW_STATUS_INVALID_CONTEXT;
     }
 
-    /* NULL auth context is ok - no encryption. */
+    /* NULL authentication context is OK - no encryption. */
     if (NULL != pAuthCtx)
     {
-        /* Ensure the Auth context is valid. */
+        /* Ensure the authentication context is valid. */
         if (false == WDRV_PIC32MZW_AuthCtxIsValid(pAuthCtx))
         {
             return WDRV_PIC32MZW_STATUS_INVALID_CONTEXT;
         }
-        /* Convert auth type to 11i bitmap. */
-        dot11iInfo = DRV_PIC32MZW_Get11iMask(pAuthCtx->authType, pAuthCtx->authMod);
+
+        /* Convert authentication type to an 11i bitmap. */
+        dot11iInfo = DRV_PIC32MZW_Get11iMask(
+                pAuthCtx->authType,
+                pAuthCtx->authMod & ~WDRV_PIC32MZW_AUTH_MOD_STA_TD);
     }
 
     /* Indicate that the dot11i settings are intended for AP mode. */
@@ -154,6 +165,9 @@ WDRV_PIC32MZW_STATUS WDRV_PIC32MZW_APStart
     /* Allocate memory for the WIDs. */
     DRV_PIC32MZW_MultiWIDInit(&wids, 512);
 
+    /* Switch to AP mode (1). */
+    DRV_PIC32MZW_MultiWIDAddValue(&wids, DRV_WIFI_WID_SWITCH_MODE, 1);
+
     /* Enable or disable broadcast SSID based on cloaked flag. */
     DRV_PIC32MZW_MultiWIDAddValue(&wids, DRV_WIFI_WID_BCAST_SSID, pBSSCtx->cloaked ? 1 : 0);
 
@@ -169,7 +183,7 @@ WDRV_PIC32MZW_STATUS WDRV_PIC32MZW_APStart
     /* Set 11i info as derived above. */
     DRV_PIC32MZW_MultiWIDAddValue(&wids, DRV_WIFI_WID_11I_SETTINGS, (int)dot11iInfo);
 
-    /* Set credentials for whichever auth types are enabled. */
+    /* Set credentials for whichever authentication types are enabled. */
     if (
             (dot11iInfo & DRV_PIC32MZW_PRIVACY)
         &&  !(dot11iInfo & DRV_PIC32MZW_RSNA_MASK)
@@ -179,6 +193,7 @@ WDRV_PIC32MZW_STATUS WDRV_PIC32MZW_APStart
         DRV_PIC32MZW_MultiWIDAddValue(&wids, DRV_WIFI_WID_KEY_ID, pAuthCtx->authInfo.WEP.idx-1);
         DRV_PIC32MZW_MultiWIDAddData(&wids, DRV_WIFI_WID_WEP_KEY_VALUE, pAuthCtx->authInfo.WEP.key, pAuthCtx->authInfo.WEP.size);
     }
+
     if (dot11iInfo & DRV_PIC32MZW_11I_PSK)
     {
         /* Set PSK credentials. */
@@ -196,22 +211,22 @@ WDRV_PIC32MZW_STATUS WDRV_PIC32MZW_APStart
 
     /* Set 11g compatibility mode 1 (2). */
     DRV_PIC32MZW_MultiWIDAddValue(&wids, DRV_WIFI_WID_11G_OPERATING_MODE, 2);
-    
+
     /* Set Ack policy: Normal Ack (0). */
     DRV_PIC32MZW_MultiWIDAddValue(&wids, DRV_WIFI_WID_ACK_POLICY, 0);
-    
+
     /* Set 11n enabled (1). */
     DRV_PIC32MZW_MultiWIDAddValue(&wids, DRV_WIFI_WID_11N_ENABLE, 1);
 
-    /* Switch to AP mode (1). */
-    DRV_PIC32MZW_MultiWIDAddValue(&wids, DRV_WIFI_WID_SWITCH_MODE, 1);
-    
     critSect = OSAL_CRIT_Enter(OSAL_CRIT_TYPE_LOW);
 
-    /* Write the wids. */
+    /* Write the WIDs. */
     if (false == DRV_PIC32MZW_MultiWid_Write(&wids))
     {
         OSAL_CRIT_Leave(OSAL_CRIT_TYPE_LOW, critSect);
+
+        DRV_PIC32MZW_MultiWIDDestroy(&wids);
+
         return WDRV_PIC32MZW_STATUS_CONNECT_FAIL;
     }
 
@@ -223,6 +238,8 @@ WDRV_PIC32MZW_STATUS WDRV_PIC32MZW_APStart
         pDcpt->pCtrl->assocInfoAP[i].handle = DRV_HANDLE_INVALID;
         pDcpt->pCtrl->assocInfoAP[i].peerAddress.valid = false;
         pDcpt->pCtrl->assocInfoAP[i].assocID = -1;
+        pDcpt->pCtrl->assocInfoAP[i].transitionDisable =
+                            (dot11iInfo & DRV_PIC32MZW_11I_TD) ? true : false;
     }
 
     OSAL_CRIT_Leave(OSAL_CRIT_TYPE_LOW, critSect);
@@ -284,6 +301,9 @@ WDRV_PIC32MZW_STATUS WDRV_PIC32MZW_APStop(DRV_HANDLE handle)
     if (false == DRV_PIC32MZW_MultiWid_Write(&wids))
     {
         OSAL_CRIT_Leave(OSAL_CRIT_TYPE_LOW, critSect);
+
+        DRV_PIC32MZW_MultiWIDDestroy(&wids);
+
         return WDRV_PIC32MZW_STATUS_REQUEST_ERROR;
     }
 
@@ -305,7 +325,7 @@ WDRV_PIC32MZW_STATUS WDRV_PIC32MZW_APStop(DRV_HANDLE handle)
     Configures the group re-key interval used when operating in Soft-AP mode
 
   Description:
-    The re-key interval specifies how much time must elapse before a group re-key 
+    The re-key interval specifies how much time must elapse before a group re-key
     is initiated with connected stations.
 
   Remarks:
@@ -344,7 +364,7 @@ WDRV_PIC32MZW_STATUS WDRV_PIC32MZW_APRekeyIntervalSet(
     if (interval < DRV_PIC32MZW_AP_REKEY_MIN_PERIOD)
     {
         return WDRV_PIC32MZW_STATUS_INVALID_ARG;
-    } 
+    }
 
     /* Allocate memory for the WIDs. */
     DRV_PIC32MZW_MultiWIDInit(&wids, 64);
@@ -358,70 +378,12 @@ WDRV_PIC32MZW_STATUS WDRV_PIC32MZW_APRekeyIntervalSet(
     if (false == DRV_PIC32MZW_MultiWid_Write(&wids))
     {
         OSAL_CRIT_Leave(OSAL_CRIT_TYPE_LOW, critSect);
+
+        DRV_PIC32MZW_MultiWIDDestroy(&wids);
+
         return WDRV_PIC32MZW_STATUS_REQUEST_ERROR;
     }
 
-    OSAL_CRIT_Leave(OSAL_CRIT_TYPE_LOW, critSect);
-
-    return WDRV_PIC32MZW_STATUS_OK;
-}
-
-//*******************************************************************************
-/*
-  Function:
-    WDRV_PIC32MZW_STATUS WDRV_PIC32MZW_APSetCustIE
-    (
-        DRV_HANDLE handle,
-        const WDRV_PIC32MZW_CUST_IE_STORE_CONTEXT *const pCustIECtx
-    )
-
-  Summary:
-    Configures the custom IE.
-
-  Description:
-    Soft-AP beacons may contain a application provided custom IE. This function 
-    associates an custom IE store context with the Soft-AP instance.
-
-  Remarks:
-    See wdrv_pic32mzw_softap.h for usage information.
-
-*/
-
-WDRV_PIC32MZW_STATUS WDRV_PIC32MZW_APSetCustIE
-(
-    DRV_HANDLE handle,
-    const WDRV_PIC32MZW_CUST_IE_STORE_CONTEXT *const pCustIECtx
-)
-{
-    WDRV_PIC32MZW_DCPT *pDcpt = (WDRV_PIC32MZW_DCPT *)handle;
-    DRV_PIC32MZW_WIDCTX wids;
-    OSAL_CRITSECT_DATA_TYPE critSect;
-
-    /* Ensure the driver handle and user pointer is valid. */
-    if ((DRV_HANDLE_INVALID == handle) || (NULL == pDcpt) || (NULL == pDcpt->pCtrl) || (NULL == pCustIECtx))
-    {
-        return WDRV_PIC32MZW_STATUS_INVALID_ARG;
-    }
-
-    /* Ensure the driver instance has been opened for use. */
-    if (false == pDcpt->isOpen)
-    {
-        return WDRV_PIC32MZW_STATUS_NOT_OPEN;
-    }
-    
-    DRV_PIC32MZW_MultiWIDInit(&wids, 1024);
-    
-    DRV_PIC32MZW_MultiWIDAddData(&wids, DRV_WIFI_WID_VSIE_TX_DATA, (uint8_t*)&pCustIECtx->ieData, pCustIECtx->curLength);
-
-    critSect = OSAL_CRIT_Enter(OSAL_CRIT_TYPE_LOW);
-
-    /* Write the wids. */
-    if (false == DRV_PIC32MZW_MultiWid_Write(&wids))
-    {
-        OSAL_CRIT_Leave(OSAL_CRIT_TYPE_LOW, critSect);
-        return WDRV_PIC32MZW_STATUS_REQUEST_ERROR;
-    }
-    
     OSAL_CRIT_Leave(OSAL_CRIT_TYPE_LOW, critSect);
 
     return WDRV_PIC32MZW_STATUS_OK;

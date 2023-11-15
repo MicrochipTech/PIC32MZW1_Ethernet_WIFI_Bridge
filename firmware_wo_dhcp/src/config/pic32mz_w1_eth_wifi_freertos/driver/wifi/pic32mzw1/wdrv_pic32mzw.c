@@ -12,28 +12,28 @@
  *******************************************************************************/
 
 //DOM-IGNORE-BEGIN
-/*******************************************************************************
-Copyright (C) 2020-21 released Microchip Technology Inc.  All rights reserved.
+/*
+Copyright (C) 2020-2023, Microchip Technology Inc., and its subsidiaries. All rights reserved.
 
-Microchip licenses to you the right to use, modify, copy and distribute
-Software only when embedded on a Microchip microcontroller or digital signal
-controller that is integrated into your product or third party product
-(pursuant to the sublicense terms in the accompanying license agreement).
+The software and documentation is provided by microchip and its contributors
+"as is" and any express, implied or statutory warranties, including, but not
+limited to, the implied warranties of merchantability, fitness for a particular
+purpose and non-infringement of third party intellectual property rights are
+disclaimed to the fullest extent permitted by law. In no event shall microchip
+or its contributors be liable for any direct, indirect, incidental, special,
+exemplary, or consequential damages (including, but not limited to, procurement
+of substitute goods or services; loss of use, data, or profits; or business
+interruption) however caused and on any theory of liability, whether in contract,
+strict liability, or tort (including negligence or otherwise) arising in any way
+out of the use of the software and documentation, even if advised of the
+possibility of such damage.
 
-You should refer to the license agreement accompanying this Software for
-additional information regarding your rights and obligations.
-
-SOFTWARE AND DOCUMENTATION ARE PROVIDED AS IS WITHOUT WARRANTY OF ANY KIND,
-EITHER EXPRESS OR IMPLIED, INCLUDING WITHOUT LIMITATION, ANY WARRANTY OF
-MERCHANTABILITY, TITLE, NON-INFRINGEMENT AND FITNESS FOR A PARTICULAR PURPOSE.
-IN NO EVENT SHALL MICROCHIP OR ITS LICENSORS BE LIABLE OR OBLIGATED UNDER
-CONTRACT, NEGLIGENCE, STRICT LIABILITY, CONTRIBUTION, BREACH OF WARRANTY, OR
-OTHER LEGAL EQUITABLE THEORY ANY DIRECT OR INDIRECT DAMAGES OR EXPENSES
-INCLUDING BUT NOT LIMITED TO ANY INCIDENTAL, SPECIAL, INDIRECT, PUNITIVE OR
-CONSEQUENTIAL DAMAGES, LOST PROFITS OR LOST DATA, COST OF PROCUREMENT OF
-SUBSTITUTE GOODS, TECHNOLOGY, SERVICES, OR ANY CLAIMS BY THIRD PARTIES
-(INCLUDING BUT NOT LIMITED TO ANY DEFENSE THEREOF), OR OTHER SIMILAR COSTS.
- *******************************************************************************/
+Except as expressly permitted hereunder and subject to the applicable license terms
+for any third-party software incorporated in the software and any applicable open
+source software license terms, no license or other rights, whether express or
+implied, are granted under any patent or other intellectual property rights of
+Microchip or any third party.
+*/
 //DOM-IGNORE-END
 
 // *****************************************************************************
@@ -56,12 +56,12 @@ SUBSTITUTE GOODS, TECHNOLOGY, SERVICES, OR ANY CLAIMS BY THIRD PARTIES
 #include <sys/kmem.h>
 
 #pragma region name="wlan_mem" origin=0xa0040000 size=0x10000
+#define PIC32MZW_RSR_PKT_NUM    (0x10000 / sizeof(WDRV_PIC32MZW_PKT_LIST_NODE))
 
-extern uint8_t g_macaddress[6];
 extern pktmem_priority_t g_pktmem_pri[NUM_MEM_PRI_LEVELS];
 
 bool DRV_PIC32MZW_StoreBSSScanResult(const DRV_PIC32MZW_SCAN_RESULTS *const pScanResult);
-bool DRV_PIC32MZW1_Crypto_Random_Init(CRYPT_RNG_CTX *pRngCtx);
+bool DRV_PIC32MZW_Crypto_Random_Init(CRYPT_RNG_CTX *pRngCtx);
 
 // *****************************************************************************
 // *****************************************************************************
@@ -79,8 +79,6 @@ bool DRV_PIC32MZW1_Crypto_Random_Init(CRYPT_RNG_CTX *pRngCtx);
 #define ZERO_CP_MIN_MAC_FRAME_OFFSET       (ETH_ETHERNET_HDR_OFFSET + 4)
 
 #define PIC32MZW_CACHE_LINE_SIZE            CACHE_LINE_SIZE
-
-#define PIC32MZW_RSR_PKT_NUM                40
 
 #ifdef DRV_PIC32MZW_TRACK_MEMORY_ALLOC
 #define WDRV_PIC32MZW_NUM_TRACK_ENTRIES     256
@@ -171,7 +169,7 @@ static const DRV_PIC32MZW_11I_MASK mapAuthTypeTo11i[] =
         | DRV_PIC32MZW_11I_RSNE | DRV_PIC32MZW_11I_CCMP128
         | DRV_PIC32MZW_11I_BIPCMAC128
         | DRV_PIC32MZW_11I_PSK,
-#ifdef WDRV_PIC32MZW_WPA3_SUPPORT
+#ifdef WDRV_PIC32MZW_WPA3_PERSONAL_SUPPORT
     /* WDRV_PIC32MZW_AUTH_TYPE_WPA2WPA3_PERSONAL */
     DRV_PIC32MZW_PRIVACY
         | DRV_PIC32MZW_11I_RSNE | DRV_PIC32MZW_11I_CCMP128
@@ -182,6 +180,36 @@ static const DRV_PIC32MZW_11I_MASK mapAuthTypeTo11i[] =
         | DRV_PIC32MZW_11I_RSNE | DRV_PIC32MZW_11I_CCMP128
         | DRV_PIC32MZW_11I_BIPCMAC128 | DRV_PIC32MZW_11I_MFP_REQUIRED
         | DRV_PIC32MZW_11I_SAE,
+#endif
+#ifdef WDRV_PIC32MZW_ENTERPRISE_SUPPORT
+    /* WDRV_PIC32MZW_AUTH_TYPE_WPAWPA2_ENTERPRISE */
+    DRV_PIC32MZW_PRIVACY
+        | DRV_PIC32MZW_11I_WPAIE
+        | DRV_PIC32MZW_11I_RSNE
+        | DRV_PIC32MZW_11I_TKIP
+        | DRV_PIC32MZW_11I_CCMP128
+        | DRV_PIC32MZW_11I_BIPCMAC128
+        | DRV_PIC32MZW_11I_1X,
+    /* WDRV_PIC32MZW_AUTH_TYPE_WPA2_ENTERPRISE */
+    DRV_PIC32MZW_PRIVACY
+        | DRV_PIC32MZW_11I_RSNE
+        | DRV_PIC32MZW_11I_CCMP128
+        | DRV_PIC32MZW_11I_BIPCMAC128
+        | DRV_PIC32MZW_11I_1X,
+    /* WDRV_PIC32MZW_AUTH_TYPE_WPA2WPA3_ENTERPRISE */
+    DRV_PIC32MZW_PRIVACY
+        | DRV_PIC32MZW_11I_RSNE
+        | DRV_PIC32MZW_11I_CCMP128
+        | DRV_PIC32MZW_11I_BIPCMAC128
+        | DRV_PIC32MZW_11I_1X,
+    /* WDRV_PIC32MZW_AUTH_TYPE_WPA3_ENTERPRISE */
+    DRV_PIC32MZW_PRIVACY
+        | DRV_PIC32MZW_11I_RSNE
+        | DRV_PIC32MZW_11I_CCMP128
+        | DRV_PIC32MZW_11I_BIPCMAC128
+        | DRV_PIC32MZW_11I_MFP_REQUIRED
+        | DRV_PIC32MZW_11I_1X
+        | DRV_PIC32MZW_11I_TD,
 #endif
 };
 
@@ -241,9 +269,6 @@ static WDRV_PIC32MZW_CTRLDCPT pic32mzwCtrlDescriptor;
 /* This is the MAC driver instance descriptor. */
 static WDRV_PIC32MZW_MACDCPT pic32mzwMACDescriptor;
 
-/* This is the queue to hold discarded receive TCP/IP packets. */
-static PROTECTED_SINGLE_LIST pic32mzwDiscardQueue;
-
 /* This is the reserved packet store. */
 static WDRV_PIC32MZW_PKT_LIST_NODE pic32mzwRsrvPkts[PIC32MZW_RSR_PKT_NUM] __attribute__((coherent, aligned(PIC32MZW_CACHE_LINE_SIZE))) __attribute__((region("wlan_mem")));
 
@@ -258,6 +283,8 @@ static SINGLE_LIST pic32mzwWIDTxQueue;
 
 /* This is the memory allocation mutex. */
 static OSAL_MUTEX_HANDLE_TYPE pic32mzwMemMutex;
+
+const uint8_t pic32mzw_rsr_pkt_num = PIC32MZW_RSR_PKT_NUM;
 
 #ifdef WDRV_PIC32MZW_STATS_ENABLE
 /* This is the memory statistics mutex. */
@@ -862,6 +889,7 @@ static bool _WDRV_PIC32MZW_ValidateInitData
         pCtrl->regDomNameLength         = 0;
         pCtrl->powerSaveMode            = WDRV_PIC32MZW_POWERSAVE_RUN_MODE;
         pCtrl->powerSavePICCorrelation  = WDRV_PIC32MZW_POWERSAVE_PIC_ASYNC_MODE;
+        pCtrl->coexConfigFlags          = 0;
         return true;
     }
 
@@ -883,9 +911,18 @@ static bool _WDRV_PIC32MZW_ValidateInitData
         return false;
     }
 
+    if (((~(WDRV_PIC32MZW_COEX_CONFIG_ENABLE |
+            WDRV_PIC32MZW_COEX_CONFIG_IF_2WIRE |     
+            WDRV_PIC32MZW_COEX_CONFIG_PRIO_WLAN_TX_GT_BTLP |
+            WDRV_PIC32MZW_COEX_CONFIG_PRIO_WLAN_RX_GT_BTLP))
+         & pInitData->coexConfigFlags) != 0)
+    {
+        return false;
+    }
+
     memset(pCtrl->regDomName, 0, WDRV_PIC32MZW_REGDOMAIN_MAX_NAME_LEN);
 
-    DRV_PIC32MZW1_Crypto_Random_Init(pInitData->pCryptRngCtx);
+    DRV_PIC32MZW_Crypto_Random_Init(pInitData->pCryptRngCtx);
 
     if (regDomNamelength > 0)
     {
@@ -895,6 +932,7 @@ static bool _WDRV_PIC32MZW_ValidateInitData
     pCtrl->regDomNameLength        = regDomNamelength;
     pCtrl->powerSaveMode           = pInitData->powerSaveMode;
     pCtrl->powerSavePICCorrelation = pInitData->powerSavePICCorrelation;
+    pCtrl->coexConfigFlags         = pInitData->coexConfigFlags;
 
     return true;
 }
@@ -935,7 +973,7 @@ static bool _WDRV_PIC32MZW_SendInitData(WDRV_PIC32MZW_CTRLDCPT* const pCtrl)
     }
 
     /* Allocate memory for the WIDs. */
-    DRV_PIC32MZW_MultiWIDInit(&wids, 32);
+    DRV_PIC32MZW_MultiWIDInit(&wids, 48);
 
     if (pCtrl->regDomNameLength > 0)
     {
@@ -946,13 +984,142 @@ static bool _WDRV_PIC32MZW_SendInitData(WDRV_PIC32MZW_CTRLDCPT* const pCtrl)
     DRV_PIC32MZW_MultiWIDAddValue(&wids, DRV_WIFI_WID_POWER_MANAGEMENT, pCtrl->powerSaveMode);
     DRV_PIC32MZW_MultiWIDAddValue(&wids, DRV_WIFI_WID_PS_CORRELATION, pCtrl->powerSavePICCorrelation);
 
+    if ((pCtrl->coexConfigFlags & WDRV_PIC32MZW_COEX_CONFIG_ENABLE) != 0)
+    {
+        DRV_PIC32MZW_MultiWIDAddValue(&wids, DRV_WIFI_WID_COEX_INTERFACE_TYPE,
+            (pCtrl->coexConfigFlags & WDRV_PIC32MZW_COEX_CONFIG_IF_2WIRE) != 0 ? 1 : 0);
+        DRV_PIC32MZW_MultiWIDAddValue(&wids, DRV_WIFI_WID_COEX_PRIORITY_FLAGS,
+            (pCtrl->coexConfigFlags >> 2) & 0x3);
+    }
+    DRV_PIC32MZW_MultiWIDAddValue(&wids, DRV_WIFI_WID_COEX_ENABLE,
+        (pCtrl->coexConfigFlags & WDRV_PIC32MZW_COEX_CONFIG_ENABLE) != 0 ? 1 : 0);
+
     critSect = OSAL_CRIT_Enter(OSAL_CRIT_TYPE_LOW);
 
     if (false == DRV_PIC32MZW_MultiWid_Write(&wids))
     {
         OSAL_CRIT_Leave(OSAL_CRIT_TYPE_LOW, critSect);
 
+        DRV_PIC32MZW_MultiWIDDestroy(&wids);
+
         WDRV_DBG_ERROR_PRINT("WID init failed\r\n");
+        return false;
+    }
+
+    OSAL_CRIT_Leave(OSAL_CRIT_TYPE_LOW, critSect);
+
+    return true;
+}
+
+//*******************************************************************************
+/*
+  Function:
+    static bool _WDRV_PIC32MZW_SendInitQuery(WDRV_PIC32MZW_CTRLDCPT* const pCtrl)
+
+  Summary:
+    Send initialization query to firmware.
+
+  Description:
+    Packs the initialization query into WID messages and sends to firmware.
+
+  Precondition:
+    None.
+
+  Parameters:
+    pCtrl - Pointer to control descriptor.
+
+  Returns:
+    Flag indicating if send was successful.
+
+  Remarks:
+    None.
+
+*/
+
+static bool _WDRV_PIC32MZW_SendInitQuery(WDRV_PIC32MZW_CTRLDCPT* const pCtrl)
+{
+    DRV_PIC32MZW_WIDCTX wids;
+    OSAL_CRITSECT_DATA_TYPE critSect;
+
+    if (NULL == pCtrl)
+    {
+        return false;
+    }
+
+    /* Allocate memory for the WIDs. */
+    DRV_PIC32MZW_MultiWIDInit(&wids, 32);
+
+    DRV_PIC32MZW_MultiWIDAddQuery(&wids, DRV_WIFI_WID_MAC_ADDR);
+
+    critSect = OSAL_CRIT_Enter(OSAL_CRIT_TYPE_LOW);
+
+    if (false == DRV_PIC32MZW_MultiWid_Write(&wids))
+    {
+        OSAL_CRIT_Leave(OSAL_CRIT_TYPE_LOW, critSect);
+
+        DRV_PIC32MZW_MultiWIDDestroy(&wids);
+
+        WDRV_DBG_ERROR_PRINT("WID query failed\r\n");
+        return false;
+    }
+
+    OSAL_CRIT_Leave(OSAL_CRIT_TYPE_LOW, critSect);
+
+    return true;
+}
+
+//*******************************************************************************
+/*
+  Function:
+    static bool _WDRV_PIC32MZW_SendMACInitData(WDRV_PIC32MZW_CTRLDCPT* const pCtrl)
+
+  Summary:
+    Send initialization MAC data to firmware.
+
+  Description:
+    Packs the initialization MAC data into WID messages and sends to firmware.
+
+  Precondition:
+    None.
+
+  Parameters:
+    pCtrl - Pointer to control descriptor.
+
+  Returns:
+    Flag indicating if send was successful.
+
+  Remarks:
+    None.
+
+*/
+
+static bool _WDRV_PIC32MZW_SendMACInitData(WDRV_PIC32MZW_CTRLDCPT* const pCtrl)
+{
+    DRV_PIC32MZW_WIDCTX wids;
+    OSAL_CRITSECT_DATA_TYPE critSect;
+
+    if (NULL == pCtrl)
+    {
+        return false;
+    }
+
+    /* Allocate memory for the WIDs. */
+    DRV_PIC32MZW_MultiWIDInit(&wids, 32);
+
+    if (true == pCtrl->macAddr.valid)
+    {
+        DRV_PIC32MZW_MultiWIDAddData(&wids, DRV_WIFI_WID_MAC_ADDR, pCtrl->macAddr.addr, 6);
+    }
+
+    critSect = OSAL_CRIT_Enter(OSAL_CRIT_TYPE_LOW);
+
+    if (false == DRV_PIC32MZW_MultiWid_Write(&wids))
+    {
+        OSAL_CRIT_Leave(OSAL_CRIT_TYPE_LOW, critSect);
+
+        DRV_PIC32MZW_MultiWIDDestroy(&wids);
+
+        WDRV_DBG_ERROR_PRINT("WID MAC init failed\r\n");
         return false;
     }
 
@@ -1006,6 +1173,7 @@ SYS_MODULE_OBJ WDRV_PIC32MZW_Initialize
     {
         const WDRV_PIC32MZW_SYS_INIT* const pInitData = (const WDRV_PIC32MZW_SYS_INIT* const)init;
         DRV_PIC32MZW_INIT drvInitData;
+        int i;
 
 #ifdef DRV_PIC32MZW_TRACK_MEMORY_ALLOC
         _DRV_PIC32MZW_MemTrackerInit();
@@ -1028,7 +1196,9 @@ SYS_MODULE_OBJ WDRV_PIC32MZW_Initialize
         pfPIC32MZWDebugPrintCb = NULL;
 #endif
         pic32mzwCtrlDescriptor.handle = DRV_HANDLE_INVALID;
-
+#ifdef WDRV_PIC32MZW_ENTERPRISE_SUPPORT
+        pic32mzwCtrlDescriptor.tlsHandle = DRV_PIC32MZW1_TLS_HANDLE_INVALID;
+#endif
         OSAL_SEM_Create(&pic32mzwCtrlDescriptor.drvAccessSemaphore, OSAL_SEM_TYPE_BINARY, 1, 1);
 
         OSAL_SEM_Create(&pic32mzwCtrlDescriptor.drvEventSemaphore, OSAL_SEM_TYPE_COUNTING, 10, 0);
@@ -1044,19 +1214,47 @@ SYS_MODULE_OBJ WDRV_PIC32MZW_Initialize
 
         pic32mzwCtrlDescriptor.rfMacConfigStatus = 0;
 
+        pic32mzwCtrlDescriptor.vendorIEMask = 0;
+
 #ifdef WDRV_PIC32MZW_STATS_ENABLE
         memset(&pic32mzMemStatistics, 0, sizeof(pic32mzMemStatistics));
         OSAL_MUTEX_Create(&pic32mzwMemStatsMutex);
 #endif
         drvInitData.alarm_1ms = WDRV_PIC32MZW_ALARM_PERIOD_1MS;
         drvInitData.alarm_max = WDRV_PIC32MZW_ALARM_PERIOD_MAX;
-        
+
+        pic32mzwCtrlDescriptor.macAddr.valid = false;
+        memset(pic32mzwCtrlDescriptor.macAddr.addr, 0, WDRV_PIC32MZW_MAC_ADDR_LEN);
+
+        pic32mzwCtrlDescriptor.isAP             = false;
+        pic32mzwCtrlDescriptor.connectedState   = WDRV_PIC32MZW_CONN_STATE_DISCONNECTED;
+        pic32mzwCtrlDescriptor.scanInProgress   = false;
+        pic32mzwCtrlDescriptor.opChannel        = WDRV_PIC32MZW_CID_ANY;
+
+        pic32mzwCtrlDescriptor.powerSaveMode           = WDRV_PIC32MZW_POWERSAVE_RUN_MODE;
+        pic32mzwCtrlDescriptor.powerSavePICCorrelation = WDRV_PIC32MZW_POWERSAVE_PIC_ASYNC_MODE;
+
+        pic32mzwCtrlDescriptor.assocInfoSTA.handle              = DRV_HANDLE_INVALID;
+        pic32mzwCtrlDescriptor.assocInfoSTA.rssi                = 0;
+        pic32mzwCtrlDescriptor.assocInfoSTA.peerAddress.valid   = false;
+        pic32mzwCtrlDescriptor.assocInfoSTA.transitionDisable   = false;
+        pic32mzwCtrlDescriptor.assocInfoSTA.assocID             = 1;
+
+        for (i=0; i<WDRV_PIC32MZW_NUM_ASSOCS; i++)
+        {
+            pic32mzwCtrlDescriptor.assocInfoAP[i].handle            = DRV_HANDLE_INVALID;
+            pic32mzwCtrlDescriptor.assocInfoAP[i].peerAddress.valid = false;
+            pic32mzwCtrlDescriptor.assocInfoAP[i].transitionDisable = false;
+            pic32mzwCtrlDescriptor.assocInfoAP[i].assocID           = -1;
+        }
+
         wdrv_pic32mzw_init(&drvInitData);
     }
     else if (TCPIP_MODULE_MAC_PIC32MZW1 == index)
     {
         int i;
         const TCPIP_MAC_MODULE_CTRL *pStackInitData;
+        bool initMacAddrValid = false;
 
         if (NULL == init)
         {
@@ -1077,30 +1275,42 @@ SYS_MODULE_OBJ WDRV_PIC32MZW_Initialize
             return (SYS_MODULE_OBJ)pDcpt;
         }
 
-        if (NULL != pStackInitData)
+        TCPIP_Helper_ProtectedSingleListInitialize(&pic32mzwMACDescriptor.ethRxPktList);
+
+        if (true == _DRV_PIC32MZW_PktListInit(&pic32mzwRsrvPktList))
         {
-            TCPIP_Helper_ProtectedSingleListInitialize(&pic32mzwMACDescriptor.ethRxPktList);
-
-            TCPIP_Helper_ProtectedSingleListInitialize(&pic32mzwDiscardQueue);
-
-            if (true == _DRV_PIC32MZW_PktListInit(&pic32mzwRsrvPktList))
+            for (i=0; i<PIC32MZW_RSR_PKT_NUM; i++)
             {
-                for (i=0; i<PIC32MZW_RSR_PKT_NUM; i++)
-                {
-                    _DRV_PIC32MZW_PktListAdd(&pic32mzwRsrvPktList, &pic32mzwRsrvPkts[i]);
-                }
+                _DRV_PIC32MZW_PktListAdd(&pic32mzwRsrvPktList, &pic32mzwRsrvPkts[i]);
             }
+        }
 
-            pic32mzwMACDescriptor.handle       = DRV_HANDLE_INVALID;
+        pic32mzwMACDescriptor.handle       = DRV_HANDLE_INVALID;
 
-            pic32mzwMACDescriptor.eventF       = pStackInitData->eventF;
-            pic32mzwMACDescriptor.pktAllocF    = pStackInitData->pktAllocF;
-            pic32mzwMACDescriptor.pktFreeF     = pStackInitData->pktFreeF;
-            pic32mzwMACDescriptor.pktAckF      = pStackInitData->pktAckF;
-            pic32mzwMACDescriptor.eventParam   = pStackInitData->eventParam;
-            pic32mzwMACDescriptor.eventMask    = 0;
-            pic32mzwMACDescriptor.events       = 0;
-            OSAL_SEM_Create(&pic32mzwMACDescriptor.eventSemaphore, OSAL_SEM_TYPE_BINARY, 1, 1);
+        pic32mzwMACDescriptor.eventF       = pStackInitData->eventF;
+        pic32mzwMACDescriptor.pktAllocF    = pStackInitData->pktAllocF;
+        pic32mzwMACDescriptor.pktFreeF     = pStackInitData->pktFreeF;
+        pic32mzwMACDescriptor.pktAckF      = pStackInitData->pktAckF;
+        pic32mzwMACDescriptor.eventParam   = pStackInitData->eventParam;
+        pic32mzwMACDescriptor.eventMask    = 0;
+        pic32mzwMACDescriptor.events       = 0;
+        OSAL_SEM_Create(&pic32mzwMACDescriptor.eventSemaphore, OSAL_SEM_TYPE_BINARY, 1, 1);
+
+        for (i=0; i<6; i++)
+        {
+            if (0 != pStackInitData->ifPhyAddress.v[i])
+            {
+                initMacAddrValid = true;
+            }
+        }
+
+        if (true == initMacAddrValid)
+        {
+            if ((false == pic32mzwCtrlDescriptor.macAddr.valid) || (0 != memcmp(pStackInitData->ifPhyAddress.v, pic32mzwCtrlDescriptor.macAddr.addr, 6)))
+            {
+                memcpy(pic32mzwCtrlDescriptor.macAddr.addr, pStackInitData->ifPhyAddress.v, 6);
+                pic32mzwCtrlDescriptor.macAddr.valid = true;
+            }
         }
     }
     else
@@ -1230,6 +1440,11 @@ void WDRV_PIC32MZW_Reinitialize
             }
 
             if (false == _WDRV_PIC32MZW_SendInitData(&pic32mzwCtrlDescriptor))
+            {
+                return;
+            }
+
+            if (false == _WDRV_PIC32MZW_SendInitQuery(&pic32mzwCtrlDescriptor))
             {
                 return;
             }
@@ -1367,8 +1582,18 @@ void WDRV_PIC32MZW_MACTasks(SYS_MODULE_OBJ object)
 
         case SYS_STATUS_BUSY:
         {
+            if (false == pic32mzwCtrlDescriptor.macAddr.valid)
+            {
+                break;
+            }
+
             if (SYS_STATUS_READY == pic32mzwDescriptor[0].sysStat)
             {
+                if (false == _WDRV_PIC32MZW_SendMACInitData(&pic32mzwCtrlDescriptor))
+                {
+                    break;
+                }
+
                 pDcpt->sysStat = SYS_STATUS_READY;
             }
             break;
@@ -1469,7 +1694,12 @@ void WDRV_PIC32MZW_Tasks(SYS_MODULE_OBJ object)
 
                 if (false == _WDRV_PIC32MZW_SendInitData(&pic32mzwCtrlDescriptor))
                 {
-                    return;
+                    break;
+                }
+
+                if (false == _WDRV_PIC32MZW_SendInitQuery(&pic32mzwCtrlDescriptor))
+                {
+                    break;
                 }
 
                 if (pic32mzwCtrlDescriptor.regDomNameLength > 0)
@@ -1489,8 +1719,6 @@ void WDRV_PIC32MZW_Tasks(SYS_MODULE_OBJ object)
         case SYS_STATUS_READY:
         case SYS_STATUS_READY_EXTENDED:
         {
-            int numDiscard;
-
             OSAL_SEM_Pend(&pic32mzwCtrlDescriptor.drvEventSemaphore, OSAL_WAIT_FOREVER);
 
             if (SYS_STATUS_UNINITIALIZED == pDcpt->sysStat)
@@ -1528,30 +1756,6 @@ void WDRV_PIC32MZW_Tasks(SYS_MODULE_OBJ object)
                 if (NULL != pAllocHdr)
                 {
                     DRV_PIC32MZW_ProcessHostRsp(pAllocHdr->memory);
-                }
-            }
-
-            numDiscard = TCPIP_Helper_ProtectedSingleListCount(&pic32mzwDiscardQueue);
-
-            while (numDiscard--)
-            {
-                TCPIP_MAC_PACKET* ptrPacket;
-
-                ptrPacket = (TCPIP_MAC_PACKET*)TCPIP_Helper_ProtectedSingleListHeadRemove(&pic32mzwDiscardQueue);
-
-                if (NULL != ptrPacket)
-                {
-                    if (0 == (ptrPacket->pktFlags & TCPIP_MAC_PKT_FLAG_QUEUED))
-                    {
-                        if (NULL != pDcpt->pMac->pktFreeF)
-                        {
-                            pDcpt->pMac->pktFreeF(ptrPacket);
-                        }
-                    }
-                    else
-                    {
-                        TCPIP_Helper_ProtectedSingleListTailAdd(&pic32mzwDiscardQueue, (SGL_LIST_NODE*)ptrPacket);
-                    }
                 }
             }
 
@@ -1669,34 +1873,17 @@ DRV_HANDLE WDRV_PIC32MZW_Open(const SYS_MODULE_INDEX index, const DRV_IO_INTENT 
 
     if (WDRV_PIC32MZW_SYS_IDX_0 == index)
     {
-        int i;
-
         pDcpt->pCtrl->handle                = (DRV_HANDLE)pDcpt;
-        pDcpt->pCtrl->isAP                  = false;
-        pDcpt->pCtrl->connectedState        = WDRV_PIC32MZW_CONN_STATE_DISCONNECTED;
-        pDcpt->pCtrl->scanInProgress        = false;
         pDcpt->pCtrl->scanActiveScanTime    = DRV_PIC32MZW_DEFAULT_ACTIVE_SCAN_TIME;
         pDcpt->pCtrl->scanPassiveListenTime = DRV_PIC32MZW_DEFAULT_PASSIVE_SCAN_TIME;
         pDcpt->pCtrl->scanNumSlots          = DRV_PIC32MZW_DEFAULT_SCAN_NUM_SLOT;
         pDcpt->pCtrl->scanNumProbes         = DRV_PIC32MZW_DEFAULT_SCAN_NUM_PROBE;
-        pDcpt->pCtrl->opChannel             = WDRV_PIC32MZW_CID_ANY;
-        pDcpt->pCtrl->scanChannelMask24     = WDRV_PIC32MZW_CM_2_4G_DEFAULT;
         pDcpt->pCtrl->pfBSSFindNotifyCB     = NULL;
         pDcpt->pCtrl->pfConnectNotifyCB     = NULL;
         pDcpt->pCtrl->pfAssociationRSSICB   = NULL;
         pDcpt->pCtrl->pfRegDomCB            = NULL;
-
-        pDcpt->pCtrl->assocInfoSTA.handle = DRV_HANDLE_INVALID;
-        pDcpt->pCtrl->assocInfoSTA.rssi   = 0;
-        pDcpt->pCtrl->assocInfoSTA.peerAddress.valid = false;
-        pDcpt->pCtrl->assocInfoSTA.assocID = 1;
-
-        for (i=0; i<WDRV_PIC32MZW_NUM_ASSOCS; i++)
-        {
-            pDcpt->pCtrl->assocInfoAP[i].handle = DRV_HANDLE_INVALID;
-            pDcpt->pCtrl->assocInfoAP[i].peerAddress.valid = false;
-            pDcpt->pCtrl->assocInfoAP[i].assocID = -1;
-        }
+        pDcpt->pCtrl->pfVendorIERxCB        = NULL;
+        pDcpt->pCtrl->pfPSNotifyCB          = NULL;
     }
     else
     {
@@ -1727,7 +1914,6 @@ DRV_HANDLE WDRV_PIC32MZW_Open(const SYS_MODULE_INDEX index, const DRV_IO_INTENT 
 void WDRV_PIC32MZW_Close(DRV_HANDLE handle)
 {
     WDRV_PIC32MZW_DCPT *const pDcpt = (WDRV_PIC32MZW_DCPT *const)handle;
-    int i;
 
     /* Ensure the driver handle is valid. */
     if ((DRV_HANDLE_INVALID == handle) || (NULL == pDcpt) || (NULL == pDcpt->pCtrl))
@@ -1737,14 +1923,12 @@ void WDRV_PIC32MZW_Close(DRV_HANDLE handle)
 
     if (handle == pDcpt->pCtrl->handle)
     {
-        pDcpt->pCtrl->connectedState = WDRV_PIC32MZW_CONN_STATE_DISCONNECTED;
-
-        pDcpt->pCtrl->assocInfoSTA.handle = DRV_HANDLE_INVALID;
-
-        for (i=0; i<WDRV_PIC32MZW_NUM_ASSOCS; i++)
-        {
-            pDcpt->pCtrl->assocInfoAP[i].handle = DRV_HANDLE_INVALID;
-        }
+        pDcpt->pCtrl->pfBSSFindNotifyCB     = NULL;
+        pDcpt->pCtrl->pfConnectNotifyCB     = NULL;
+        pDcpt->pCtrl->pfAssociationRSSICB   = NULL;
+        pDcpt->pCtrl->pfRegDomCB            = NULL;
+        pDcpt->pCtrl->pfVendorIERxCB        = NULL;
+        pDcpt->pCtrl->pfPSNotifyCB          = NULL;
     }
 
     pDcpt->isOpen = false;
@@ -1798,6 +1982,9 @@ WDRV_PIC32MZW_STATUS WDRV_PIC32MZW_PMKCacheFlush
     if (false == DRV_PIC32MZW_MultiWid_Write(&wids))
     {
         OSAL_CRIT_Leave(OSAL_CRIT_TYPE_LOW, critSect);
+
+        DRV_PIC32MZW_MultiWIDDestroy(&wids);
+
         return WDRV_PIC32MZW_STATUS_REQUEST_ERROR;
     }
 
@@ -2260,10 +2447,13 @@ TCPIP_MAC_RES WDRV_PIC32MZW_MACParametersGet
     {
         if (NULL != pMacParams)
         {
-            if (OSAL_RESULT_TRUE == OSAL_SEM_Pend(&pic32mzwCtrlDescriptor.drvAccessSemaphore, OSAL_WAIT_FOREVER))
+            if (true == pic32mzwCtrlDescriptor.macAddr.valid)
             {
-                memcpy(pMacParams->ifPhyAddress.v, g_macaddress, 6);
-                OSAL_SEM_Post(&pic32mzwCtrlDescriptor.drvAccessSemaphore);
+                memcpy(pMacParams->ifPhyAddress.v, pic32mzwCtrlDescriptor.macAddr.addr, 6);
+            }
+            else
+            {
+                memset(pMacParams->ifPhyAddress.v, 0, 6);
             }
 
             pMacParams->processFlags = (TCPIP_MAC_PROCESS_FLAG_RX | TCPIP_MAC_PROCESS_FLAG_TX);
@@ -2537,11 +2727,63 @@ WDRV_PIC32MZW_STATUS WDRV_PIC32MZW_InfoDeviceMACAddressGet
         return WDRV_PIC32MZW_STATUS_NOT_OPEN;
     }
 
-    if (OSAL_RESULT_TRUE == OSAL_SEM_Pend(&pic32mzwCtrlDescriptor.drvAccessSemaphore, OSAL_WAIT_FOREVER))
+    if (false == pic32mzwCtrlDescriptor.macAddr.valid)
     {
-        memcpy(pMACAddress, g_macaddress, 6);
-        OSAL_SEM_Post(&pic32mzwCtrlDescriptor.drvAccessSemaphore);
+        return WDRV_PIC32MZW_STATUS_NOT_OPEN;
     }
+
+    memcpy(pMACAddress, pic32mzwCtrlDescriptor.macAddr.addr, 6);
+
+    return WDRV_PIC32MZW_STATUS_OK;
+}
+
+//*******************************************************************************
+/*
+  Function:
+    WDRV_PIC32MZW_STATUS WDRV_PIC32MZW_InfoEnabledChannelsGet
+    (
+        DRV_HANDLE handle,
+        WDRV_PIC32MZW_CHANNEL24_MASK *const pChannelMask
+    )
+
+  Summary:
+    Retrieves the enabled channels of the PIC32MZW.
+
+  Description:
+    Retrieves the enabled channels for the set regulatory domain.
+
+  Remarks:
+    See wdrv_pic32mzw.h for usage information.
+
+*/
+
+WDRV_PIC32MZW_STATUS WDRV_PIC32MZW_InfoEnabledChannelsGet
+(
+    DRV_HANDLE handle,
+    WDRV_PIC32MZW_CHANNEL24_MASK *const pChannelMask
+)
+{
+    const WDRV_PIC32MZW_DCPT *const pDcpt = (const WDRV_PIC32MZW_DCPT *const)handle;
+
+    /* Ensure the driver handle and user pointer is valid. */
+    if ((DRV_HANDLE_INVALID == handle) || (NULL == pDcpt) || (NULL == pChannelMask))
+    {
+        return WDRV_PIC32MZW_STATUS_INVALID_ARG;
+    }
+
+    /* Ensure pointer is valid */
+    if (NULL == pDcpt->pCtrl)
+    {
+        return WDRV_PIC32MZW_STATUS_INVALID_ARG;
+    }
+
+    /* Ensure the driver instance has been opened for use. */
+    if (false == pDcpt->isOpen)
+    {
+        return WDRV_PIC32MZW_STATUS_NOT_OPEN;
+    }
+
+    *pChannelMask = pDcpt->pCtrl->scanChannelMask24;
 
     return WDRV_PIC32MZW_STATUS_OK;
 }
@@ -2734,7 +2976,10 @@ void WDRV_PIC32MZW_WIDProcess(uint16_t wid, uint16_t length, const uint8_t *cons
             if (false == pCtrl->isAP)
             {
                 /* Store locally. */
-                pCtrl->assocInfoSTA.rssi = *pData;
+                if (0 != *pData)
+                {
+                    pCtrl->assocInfoSTA.rssi = *pData;
+                }
 
                 if (NULL != pCtrl->pfAssociationRSSICB)
                 {
@@ -2769,6 +3014,16 @@ void WDRV_PIC32MZW_WIDProcess(uint16_t wid, uint16_t length, const uint8_t *cons
 
                 if (false == pCtrl->isAP)
                 {
+#ifdef WDRV_PIC32MZW_ENTERPRISE_SUPPORT
+                    if (DRV_PIC32MZW1_TLS_HANDLE_INVALID != pCtrl->tlsHandle)
+                    {
+                        /* De-init the TLS module as its not required anymore */
+                        if (true == DRV_PIC32MZW1_TLS_DeInit(pCtrl->tlsHandle))
+                        {
+                            pCtrl->tlsHandle = DRV_PIC32MZW1_TLS_HANDLE_INVALID;
+                        }
+                    }
+#endif /* WDRV_PIC32MZW_ENTERPRISE_SUPPORT */
                     if (NULL != pCtrl->pfConnectNotifyCB)
                     {
                         /* Update user application via callback if set. */
@@ -2779,6 +3034,13 @@ void WDRV_PIC32MZW_WIDProcess(uint16_t wid, uint16_t length, const uint8_t *cons
                 else
                 {
                     pCtrl->isAP = false;
+
+                    if (NULL != pCtrl->pfConnectNotifyCB)
+                    {
+                        /* Update user application via callback if set. */
+
+                        pCtrl->pfConnectNotifyCB((DRV_HANDLE)pDcpt, WDRV_PIC32MZW_ASSOC_HANDLE_ALL, WDRV_PIC32MZW_CONN_STATE_DISCONNECTED);
+                    }
                 }
             }
             else if ((1 == *pData) && (WDRV_PIC32MZW_CONN_STATE_CONNECTED != pCtrl->connectedState))
@@ -2791,7 +3053,6 @@ void WDRV_PIC32MZW_WIDProcess(uint16_t wid, uint16_t length, const uint8_t *cons
 
                     pCtrl->assocInfoSTA.handle            = (DRV_HANDLE)pCtrl;
                     pCtrl->assocInfoSTA.peerAddress.valid = false;
-                    pCtrl->assocInfoSTA.authType          = WDRV_PIC32MZW_AUTH_TYPE_DEFAULT;
                     pCtrl->assocInfoSTA.rssi              = 0;
                     pCtrl->assocInfoSTA.assocID           = 1;
 
@@ -2804,10 +3065,26 @@ void WDRV_PIC32MZW_WIDProcess(uint16_t wid, uint16_t length, const uint8_t *cons
 
                     critSect = OSAL_CRIT_Enter(OSAL_CRIT_TYPE_LOW);
 
-                    DRV_PIC32MZW_MultiWid_Write(&wids);
+                    if (false == DRV_PIC32MZW_MultiWid_Write(&wids))
+                    {
+                        OSAL_CRIT_Leave(OSAL_CRIT_TYPE_LOW, critSect);
 
-                    OSAL_CRIT_Leave(OSAL_CRIT_TYPE_LOW, critSect);
-
+                        DRV_PIC32MZW_MultiWIDDestroy(&wids);
+                    }
+                    else
+                    {
+                        OSAL_CRIT_Leave(OSAL_CRIT_TYPE_LOW, critSect);
+                    }
+#ifdef WDRV_PIC32MZW_ENTERPRISE_SUPPORT
+                    if (DRV_PIC32MZW1_TLS_HANDLE_INVALID != pCtrl->tlsHandle)
+                    {
+                        /* De-init the TLS module as its not required anymore */
+                        if (true == DRV_PIC32MZW1_TLS_DeInit(pCtrl->tlsHandle))
+                        {
+                            pCtrl->tlsHandle = DRV_PIC32MZW1_TLS_HANDLE_INVALID;
+                        }
+                    }
+#endif /* WDRV_PIC32MZW_ENTERPRISE_SUPPORT */
                     if (NULL != pCtrl->pfConnectNotifyCB)
                     {
                         /* Update user application via callback if set. */
@@ -2839,6 +3116,32 @@ void WDRV_PIC32MZW_WIDProcess(uint16_t wid, uint16_t length, const uint8_t *cons
                 pCtrl->assocInfoSTA.peerAddress.valid = true;
             }
 
+            break;
+        }
+
+        case DRV_WIFI_WID_WPA3_TD_AP:
+        {
+            if (length < 1)
+            {
+                break;
+            }
+
+            if (false == pCtrl->isAP)
+            {
+                pCtrl->assocInfoSTA.transitionDisable = (1 == *pData) ? true : false;
+            }
+            break;
+        }
+
+        case DRV_WIFI_WID_MAC_ADDR:
+        {
+            if (length < 6)
+            {
+                break;
+            }
+
+            memcpy(&pCtrl->macAddr.addr, pData, WDRV_PIC32MZW_MAC_ADDR_LEN);
+            pCtrl->macAddr.valid = true;
             break;
         }
 
@@ -2950,10 +3253,20 @@ void WDRV_PIC32MZW_WIDProcess(uint16_t wid, uint16_t length, const uint8_t *cons
 
         case DRV_WIFI_WID_REG_DOMAIN_INFO:
         {
+            const uint8_t *pChannel = NULL;
+            WDRV_PIC32MZW_CHANNEL24_MASK channelMask;
+
             if (length < DRV_PIC32MZW_REGDOMAIN_RES_LEN)
             {
                 break;
             }
+
+            pChannel = &pData[8 + WDRV_PIC32MZW_REGDOMAIN_MAX_NAME_LEN];
+
+            channelMask = *(pChannel++);
+            channelMask |= *(pChannel++) << 8;
+
+            pCtrl->scanChannelMask24 = channelMask;
 
             if (NULL != pCtrl->pfRegDomCB)
             {
@@ -2988,6 +3301,8 @@ void WDRV_PIC32MZW_WIDProcess(uint16_t wid, uint16_t length, const uint8_t *cons
                     regDomInfo.version.minor = *(pVer++);
                     regDomInfo.version.minor |= *(pVer++) << 8;
 
+                    regDomInfo.channelMask = channelMask;
+
                     pCtrl->pfRegDomCB((DRV_HANDLE)pDcpt, pData[0], pData[1], current, &regDomInfo);
                 }
             }
@@ -2999,19 +3314,12 @@ void WDRV_PIC32MZW_WIDProcess(uint16_t wid, uint16_t length, const uint8_t *cons
         {
             if (SYS_STATUS_READY_EXTENDED == pDcpt->sysStat)
             {
-                if (NULL != pData)
-                {
-                    pCtrl->rfMacConfigStatus = *pData;
+                pCtrl->rfMacConfigStatus = *pData;
 
-                    if (WDRV_PIC32MZW_RF_MAC_MIN_REQ_CONFIG == (pCtrl->rfMacConfigStatus & WDRV_PIC32MZW_RF_MAC_MIN_REQ_CONFIG))
-                    {
-                        pDcpt->pCtrl->extSysStat = WDRV_PIC32MZW_SYS_STATUS_RF_READY;
-                        pDcpt->sysStat = SYS_STATUS_READY;
-                    }
-                    else
-                    {
-                        pDcpt->pCtrl->extSysStat = WDRV_PIC32MZW_SYS_STATUS_RF_CONF_MISSING;
-                    }
+                if (WDRV_PIC32MZW_RF_MAC_MIN_REQ_CONFIG == (pCtrl->rfMacConfigStatus & WDRV_PIC32MZW_RF_MAC_MIN_REQ_CONFIG))
+                {
+                    pDcpt->pCtrl->extSysStat = WDRV_PIC32MZW_SYS_STATUS_RF_READY;
+                    pDcpt->sysStat = SYS_STATUS_READY;
                 }
                 else
                 {
@@ -3019,6 +3327,86 @@ void WDRV_PIC32MZW_WIDProcess(uint16_t wid, uint16_t length, const uint8_t *cons
                 }
             }
 
+            break;
+        }
+
+        case DRV_WIFI_WID_VSIE_RX_DATA:
+        {
+            uint8_t frameType;
+
+            if (length < DRV_PIC32MZW_IE_DATA_SIZE_FIELD_LEN)
+            {
+                break;
+            }
+
+            if (NULL != pCtrl->pfVendorIERxCB)
+            {
+                WDRV_PIC32MZW_VENDORIE_INFO vendorIEInfo;
+
+                memcpy(vendorIEInfo.sa, &pData[0], 6);
+
+                vendorIEInfo.rssi = pData[6];
+
+                frameType = pData[7];
+
+                if (0x80 == frameType)
+                {
+                    vendorIEInfo.frameType = WDRV_PIC32MZW_VENDOR_IE_BEACON;
+                }
+                else if (0x40 == frameType)
+                {
+                    vendorIEInfo.frameType = WDRV_PIC32MZW_VENDOR_IE_PROBE_REQ;
+                }
+                else if (0x50 == frameType)
+                {
+                    vendorIEInfo.frameType = WDRV_PIC32MZW_VENDOR_IE_PROBE_RSP;
+                }
+                else
+                {
+                    break;
+                }
+
+                pCtrl->pfVendorIERxCB((DRV_HANDLE)pDcpt, &vendorIEInfo, &pData[DRV_PIC32MZW_IE_DATA_OFFSET_RX], (length - DRV_PIC32MZW_IE_DATA_OFFSET_RX));
+            }
+            break;
+        }
+		case DRV_WIFI_WID_POWER_MANAGEMENT_INFO:
+        {
+            WDRV_PIC32MZW_POWERSAVE_MODE psMode;
+            bool bSleepEntry;
+            uint32_t u32SleepDurationMs;
+
+            if (length < DRV_PIC32MZW_PS_INFO_LEN)
+            {
+                break;
+            }
+
+            psMode = (WDRV_PIC32MZW_POWERSAVE_MODE) pData[0];
+
+            /* Update the current PS mode */
+            if (pCtrl->powerSaveMode != psMode)
+            {
+                pCtrl->powerSaveMode = psMode;
+            }
+
+            if(1 == pData[1])
+            {
+                bSleepEntry = true;
+            }
+            else
+            {
+                bSleepEntry = false;
+            }
+
+            u32SleepDurationMs = pData[2];
+            u32SleepDurationMs |= pData[3] << 8;
+            u32SleepDurationMs |= pData[4] << 16;
+            u32SleepDurationMs |= pData[5] << 24;
+
+            if (NULL != pCtrl->pfPSNotifyCB)
+            {
+                pCtrl->pfPSNotifyCB((DRV_HANDLE)pDcpt, psMode, bSleepEntry, u32SleepDurationMs);
+            }
             break;
         }
 
@@ -3139,7 +3527,7 @@ void WDRV_PIC32MZW_TasksRFSMCISR(void)
     None.
 */
 
-static bool _DRV_PIC32MZW_AllocPktCallback
+static void _DRV_PIC32MZW_AllocPktCallback
 (
     TCPIP_MAC_PACKET* ptrPacket,
     const void* ackParam
@@ -3149,7 +3537,7 @@ static bool _DRV_PIC32MZW_AllocPktCallback
 
     if (NULL == ptrPacket)
     {
-        return false;
+        return;
     }
 
     pAllocHdr = (DRV_PIC32MZW_MEM_ALLOC_HDR*)ackParam;
@@ -3158,15 +3546,16 @@ static bool _DRV_PIC32MZW_AllocPktCallback
     {
         if (0 == DRV_PIC32MZW_MemFree(DRV_PIC32MZW_ALLOC_OPT_PARAMS pAllocHdr->memory))
         {
-            return false;
+            return;
         }
     }
 
     ptrPacket->ackParam = NULL;
 
-    TCPIP_Helper_ProtectedSingleListTailAdd(&pic32mzwDiscardQueue, (SGL_LIST_NODE*)ptrPacket);
-
-    return true;
+    if (NULL != pic32mzwMACDescriptor.pktFreeF)
+    {
+        pic32mzwMACDescriptor.pktFreeF(ptrPacket);
+    }
 }
 
 // *****************************************************************************
@@ -3232,13 +3621,13 @@ void DRV_PIC32MZW_MACEthernetSendPacket
 
     if (NULL == ptrPacket)
     {
-        DRV_PIC32MZW_MemFree(pBufferAddr);
+        DRV_PIC32MZW_MemFree(DRV_PIC32MZW_ALLOC_OPT_PARAMS pBufferAddr);
         return;
     }
 
     memcpy(ptrPacket->pMacLayer, pEthMsg, lengthEthMsg);
 
-    DRV_PIC32MZW_MemFree(pBufferAddr);
+    DRV_PIC32MZW_MemFree(DRV_PIC32MZW_ALLOC_OPT_PARAMS pBufferAddr);
 
     ptrPacket->pDSeg->segLen = lengthEthMsg - ETHERNET_HDR_LEN;
     ptrPacket->pktFlags |= TCPIP_MAC_PKT_FLAG_QUEUED;
@@ -3430,7 +3819,7 @@ int8_t DRV_PIC32MZW_MemFree(DRV_PIC32MZW_ALLOC_OPT_ARGS void *pBufferAddr)
         }
 #endif
 
-        if (((void*)pAllocHdr >= (void*)0xa0040000) && ((void*)pAllocHdr <= (void*)0xa0050000))
+        if (((void*)pAllocHdr >= (void*)pic32mzwRsrvPkts) && ((void*)pAllocHdr <= (void*)(&pic32mzwRsrvPkts[PIC32MZW_RSR_PKT_NUM])))
         {
             if (true == pic32mzwDescriptor[1].isInit)
             {
@@ -3824,8 +4213,12 @@ DRV_PIC32MZW_11I_MASK DRV_PIC32MZW_Get11iMask
     {
         if (
                 (WDRV_PIC32MZW_AUTH_TYPE_WPA2_PERSONAL == authType)
-#ifdef WDRV_PIC32MZW_WPA3_SUPPORT
+#ifdef WDRV_PIC32MZW_WPA3_PERSONAL_SUPPORT
             ||  (WDRV_PIC32MZW_AUTH_TYPE_WPA2WPA3_PERSONAL == authType)
+#endif
+#ifdef WDRV_PIC32MZW_ENTERPRISE_SUPPORT
+            ||  (WDRV_PIC32MZW_AUTH_TYPE_WPA2_ENTERPRISE == authType)
+            ||  (WDRV_PIC32MZW_AUTH_TYPE_WPA2WPA3_ENTERPRISE == authType)
 #endif
         )
         {
@@ -3837,6 +4230,10 @@ DRV_PIC32MZW_11I_MASK DRV_PIC32MZW_Get11iMask
         if (
                 (WDRV_PIC32MZW_AUTH_TYPE_WPAWPA2_PERSONAL == authType)
             ||  (WDRV_PIC32MZW_AUTH_TYPE_WPA2_PERSONAL == authType)
+#ifdef WDRV_PIC32MZW_ENTERPRISE_SUPPORT
+            ||  (WDRV_PIC32MZW_AUTH_TYPE_WPAWPA2_ENTERPRISE == authType)
+            ||  (WDRV_PIC32MZW_AUTH_TYPE_WPA2_ENTERPRISE == authType)
+#endif
         )
         {
             dot11iInfo &= ~DRV_PIC32MZW_11I_BIPCMAC128;
@@ -3851,6 +4248,42 @@ DRV_PIC32MZW_11I_MASK DRV_PIC32MZW_Get11iMask
         }
     }
 
+    if (authMod & (WDRV_PIC32MZW_AUTH_MOD_AP_TD))
+    {
+#ifdef WDRV_PIC32MZW_WPA3_PERSONAL_SUPPORT
+        if (
+                (WDRV_PIC32MZW_AUTH_TYPE_WPA2WPA3_PERSONAL == authType)
+            ||  (WDRV_PIC32MZW_AUTH_TYPE_WPA3_PERSONAL == authType)
+        )
+        {
+            dot11iInfo |= DRV_PIC32MZW_11I_TD;
+        }
+#endif
+    }
+
+    if (authMod & (WDRV_PIC32MZW_AUTH_MOD_STA_TD))
+    {
+#ifdef WDRV_PIC32MZW_WPA3_PERSONAL_SUPPORT
+        if (dot11iInfo & DRV_PIC32MZW_11I_SAE)
+        {
+            dot11iInfo |= DRV_PIC32MZW_11I_MFP_REQUIRED;
+            dot11iInfo |= DRV_PIC32MZW_11I_TD;
+            dot11iInfo &= ~DRV_PIC32MZW_11I_PSK;
+        }
+#endif
+#ifdef WDRV_PIC32MZW_ENTERPRISE_SUPPORT
+        if (
+                (dot11iInfo & DRV_PIC32MZW_11I_1X)
+            &&  (dot11iInfo & DRV_PIC32MZW_11I_BIPCMAC128)
+        )
+        {
+            dot11iInfo |= DRV_PIC32MZW_11I_MFP_REQUIRED;
+            dot11iInfo |= DRV_PIC32MZW_11I_TD;
+            dot11iInfo &= ~DRV_PIC32MZW_11I_TKIP;
+        }
+#endif
+    }
+
     return dot11iInfo;
 }
 
@@ -3859,8 +4292,8 @@ DRV_PIC32MZW_11I_MASK DRV_PIC32MZW_Get11iMask
   Function:
     void DRV_PIC32MZW_CryptoCallbackPush
     (
-        DRV_PIC32MZW1_CRYPTO_CB fw_cb,
-        DRV_PIC32MZW1_CRYPTO_STATUS_T status,
+        DRV_PIC32MZW_CRYPTO_CB fw_cb,
+        DRV_PIC32MZW_CRYPTO_RETURN_T status,
         uintptr_t context
     )
 
@@ -3889,8 +4322,8 @@ DRV_PIC32MZW_11I_MASK DRV_PIC32MZW_Get11iMask
 
 void DRV_PIC32MZW_CryptoCallbackPush
 (
-    DRV_PIC32MZW1_CRYPTO_CB fw_cb,
-    DRV_PIC32MZW1_CRYPTO_STATUS_T status,
+    DRV_PIC32MZW_CRYPTO_CB fw_cb,
+    DRV_PIC32MZW_CRYPTO_RETURN_T status,
     uintptr_t context
 )
 {

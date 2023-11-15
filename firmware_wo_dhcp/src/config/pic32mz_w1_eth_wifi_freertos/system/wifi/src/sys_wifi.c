@@ -50,6 +50,8 @@ SUBSTITUTE GOODS, TECHNOLOGY, SERVICES, OR ANY CLAIMS BY THIRD PARTIES
 #include "system/wifi/sys_wifi.h"
 #include "configuration.h"
 #include "system/wifiprov/sys_wifiprov.h"
+
+
 // *****************************************************************************
 // *****************************************************************************
 // Section: Type Definitions
@@ -132,6 +134,7 @@ static SYS_WIFI_RESULT SYS_WIFI_ConnectReq(void);
 static uint8_t SYS_WIFI_APDisconnectSTA(uint8_t *macAddr);
 
 static void  SYS_WIFI_WIFIPROVCallBack(uint32_t event, void * data,void *cookie);
+
 
 
 // *****************************************************************************
@@ -529,11 +532,10 @@ static SYS_WIFI_RESULT SYS_WIFI_ConfigReq(void)
                 }
                 break;
             }
-
             case SYS_WIFI_WEP:
             {
-               ret = SYS_WIFI_CONFIG_FAILURE; 
-              /* Wi-Fi service doesn't support WEP */
+                ret = SYS_WIFI_CONFIG_FAILURE; 
+                /* Wi-Fi service doesn't support WEP */
                 break;
             }
 
@@ -585,6 +587,7 @@ static uint32_t SYS_WIFI_ExecuteBlock
 ) 
 {
     SYS_STATUS                   tcpIpStat;
+    static TCPIP_NET_HANDLE      netHdl;
     SYS_WIFI_OBJ *               wifiSrvcObj = (SYS_WIFI_OBJ *) object;
     uint8_t                      ret =  SYS_WIFIPROV_OBJ_INVALID;
 
@@ -672,6 +675,13 @@ static uint32_t SYS_WIFI_ExecuteBlock
                     } 
                     else if (tcpIpStat == SYS_STATUS_READY) 
                     {
+                        /* PIC32MZW1 network handle*/
+                        netHdl = TCPIP_STACK_NetHandleGet("PIC32MZW1");
+                        /* AP Mode*/
+                        if (true == TCPIP_DHCP_IsEnabled(netHdl)) 
+                        {
+                            TCPIP_DHCP_Disable(netHdl);
+                        }
                     }                
                     wifiSrvcObj->wifiSrvcStatus = SYS_WIFI_STATUS_CONNECT_REQ;
                     OSAL_SEM_Post(&g_wifiSrvcSemaphore);
@@ -687,6 +697,8 @@ static uint32_t SYS_WIFI_ExecuteBlock
                     {
                         if (SYS_WIFI_SUCCESS == SYS_WIFI_ConfigReq()) 
                         {
+						
+
                             if (SYS_WIFI_SUCCESS == SYS_WIFI_ConnectReq()) 
                             {
                                 wifiSrvcObj->wifiSrvcStatus = SYS_WIFI_STATUS_TCPIP_READY;
