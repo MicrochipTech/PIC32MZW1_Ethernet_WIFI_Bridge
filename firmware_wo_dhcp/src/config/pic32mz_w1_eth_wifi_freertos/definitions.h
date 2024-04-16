@@ -48,6 +48,7 @@
 #include <stdint.h>
 #include <stddef.h>
 #include <stdbool.h>
+#include <stdio.h>
 #include "crypto/crypto.h"
 #include "driver/ba414e/drv_ba414e.h"
 #include "driver/ethmac/drv_ethmac.h"
@@ -56,6 +57,7 @@
 #include "peripheral/nvm/plib_nvm.h"
 #include "peripheral/coretimer/plib_coretimer.h"
 #include "peripheral/uart/plib_uart1.h"
+#include "peripheral/uart/plib_uart2.h"
 #include "system/int/sys_int.h"
 #include "system/reset/sys_reset.h"
 #include "osal/osal.h"
@@ -226,6 +228,7 @@ typedef struct
 
 
     SYS_MODULE_OBJ  drvWifiPIC32MZW1;
+
     SYS_MODULE_OBJ  syswifi;
 
 } SYSTEM_OBJECTS;
