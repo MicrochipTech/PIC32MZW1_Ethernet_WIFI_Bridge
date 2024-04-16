@@ -25,28 +25,28 @@
  *******************************************************************************/
 
 // DOM-IGNORE-BEGIN
-/*******************************************************************************
-Copyright (C) 2020-21 released Microchip Technology Inc. All rights reserved.
+/*
+Copyright (C) 2020-2023, Microchip Technology Inc., and its subsidiaries. All rights reserved.
 
-Microchip licenses to you the right to use, modify, copy and distribute
-Software only when embedded on a Microchip microcontroller or digital signal
-controller that is integrated into your product or third party product
-(pursuant to the sublicense terms in the accompanying license agreement).
+The software and documentation is provided by microchip and its contributors
+"as is" and any express, implied or statutory warranties, including, but not
+limited to, the implied warranties of merchantability, fitness for a particular
+purpose and non-infringement of third party intellectual property rights are
+disclaimed to the fullest extent permitted by law. In no event shall microchip
+or its contributors be liable for any direct, indirect, incidental, special,
+exemplary, or consequential damages (including, but not limited to, procurement
+of substitute goods or services; loss of use, data, or profits; or business
+interruption) however caused and on any theory of liability, whether in contract,
+strict liability, or tort (including negligence or otherwise) arising in any way
+out of the use of the software and documentation, even if advised of the
+possibility of such damage.
 
-You should refer to the license agreement accompanying this Software for
-additional information regarding your rights and obligations.
-
-SOFTWARE AND DOCUMENTATION ARE PROVIDED AS IS WITHOUT WARRANTY OF ANY KIND,
-EITHER EXPRESS OR IMPLIED, INCLUDING WITHOUT LIMITATION, ANY WARRANTY OF
-MERCHANTABILITY, TITLE, NON-INFRINGEMENT AND FITNESS FOR A PARTICULAR PURPOSE.
-IN NO EVENT SHALL MICROCHIP OR ITS LICENSORS BE LIABLE OR OBLIGATED UNDER
-CONTRACT, NEGLIGENCE, STRICT LIABILITY, CONTRIBUTION, BREACH OF WARRANTY, OR
-OTHER LEGAL EQUITABLE THEORY ANY DIRECT OR INDIRECT DAMAGES OR EXPENSES
-INCLUDING BUT NOT LIMITED TO ANY INCIDENTAL, SPECIAL, INDIRECT, PUNITIVE OR
-CONSEQUENTIAL DAMAGES, LOST PROFITS OR LOST DATA, COST OF PROCUREMENT OF
-SUBSTITUTE GOODS, TECHNOLOGY, SERVICES, OR ANY CLAIMS BY THIRD PARTIES
-(INCLUDING BUT NOT LIMITED TO ANY DEFENSE THEREOF), OR OTHER SIMILAR COSTS.
- *******************************************************************************/
+Except as expressly permitted hereunder and subject to the applicable license terms
+for any third-party software incorporated in the software and any applicable open
+source software license terms, no license or other rights, whether express or
+implied, are granted under any patent or other intellectual property rights of
+Microchip or any third party.
+*/
 // DOM-IGNORE-END
 
 #ifndef _WDRV_PIC32MZW_H
@@ -65,8 +65,11 @@ SUBSTITUTE GOODS, TECHNOLOGY, SERVICES, OR ANY CLAIMS BY THIRD PARTIES
 #include "wdrv_pic32mzw_assoc.h"
 #include "wdrv_pic32mzw_regdomain.h"
 #include "wdrv_pic32mzw_ps.h"
+#include "wdrv_pic32mzw_ie.h"
 #include "tcpip/src/link_list.h"
-
+#ifdef WDRV_PIC32MZW_ENTERPRISE_SUPPORT
+#include "drv_pic32mzw1_tls.h"
+#endif
 // DOM-IGNORE-BEGIN
 #ifdef __cplusplus // Provide C++ Compatibility
     extern "C" {
@@ -151,6 +154,9 @@ typedef struct _WDRV_PIC32MZW_CTRLDCPT
     /* Power-save PIC/WiFi sync/async correlation mode. */
     WDRV_PIC32MZW_POWERSAVE_PIC_CORRELATION powerSavePICCorrelation;
 
+    /* Coexistence arbiter configuration flags */
+    uint8_t coexConfigFlags;
+
     /* Access semaphore for MAC firmware library. */
     OSAL_SEM_HANDLE_TYPE drvAccessSemaphore;
 
@@ -178,6 +184,9 @@ typedef struct _WDRV_PIC32MZW_CTRLDCPT
     /* RF and MAC configuration status */
     uint8_t rfMacConfigStatus;
 
+    /* Physical MAC address of interface. */
+    WDRV_PIC32MZW_MAC_ADDR macAddr;
+
     /* Extended system status which can be queried via WDRV_PIC32MZW_StatusExt. */
     WDRV_PIC32MZW_SYS_STATUS extSysStat;
 
@@ -192,6 +201,21 @@ typedef struct _WDRV_PIC32MZW_CTRLDCPT
 
     /* Callback to use for retrieving regulatory domain information. */
     WDRV_PIC32MZW_REGDOMAIN_CALLBACK pfRegDomCB;
+    
+    /* Callback used for retrieving vendor IE information received. */
+    WDRV_PIC32MZW_IE_RX_CALLBACK pfVendorIERxCB;
+    
+    /* Vendor specific IE frame filter mask */
+    uint8_t vendorIEMask;
+
+#ifdef WDRV_PIC32MZW_ENTERPRISE_SUPPORT
+    /* Handle to driver TLS module */
+    DRV_PIC32MZW1_TLS_HANDLE    tlsHandle;
+#endif
+    
+	/* Callback to use for notifying WiFi power-save sleep entry and exit.*/
+    WDRV_PIC32MZW_PS_NOTIFY_CALLBACK pfPSNotifyCB;
+
 } WDRV_PIC32MZW_CTRLDCPT;
 
 // *****************************************************************************
@@ -595,6 +619,45 @@ WDRV_PIC32MZW_STATUS WDRV_PIC32MZW_InfoDeviceMACAddressGet
 (
     DRV_HANDLE handle,
     uint8_t *const pMACAddress
+);
+
+//*******************************************************************************
+/*
+  Function:
+    WDRV_PIC32MZW_STATUS WDRV_PIC32MZW_InfoEnabledChannelsGet
+    (
+        DRV_HANDLE handle,
+        WDRV_PIC32MZW_CHANNEL24_MASK *const pChannelMask
+    )
+
+  Summary:
+    Retrieves the enabled channels of the PIC32MZW.
+
+  Description:
+    Retrieves the enabled channels for the set regulatory domain.
+
+  Precondition:
+    WDRV_PIC32MZW_Initialize should have been called.
+    WDRV_PIC32MZW_Open should have been called to obtain a valid handle.
+
+  Parameters:
+    handle       - Client handle obtained by a call to WDRV_PIC32MZW_Open.
+    pChannelMask - Pointer to variable to receive the enabled channels.
+
+  Returns:
+    WDRV_PIC32MZW_STATUS_OK             - The information has been returned.
+    WDRV_PIC32MZW_STATUS_NOT_OPEN       - The driver instance is not open.
+    WDRV_PIC32MZW_STATUS_INVALID_ARG    - The parameters were incorrect.
+
+  Remarks:
+    None.
+
+*/
+
+WDRV_PIC32MZW_STATUS WDRV_PIC32MZW_InfoEnabledChannelsGet
+(
+    DRV_HANDLE handle,
+    WDRV_PIC32MZW_CHANNEL24_MASK *const pChannelMask
 );
 
 //*******************************************************************************

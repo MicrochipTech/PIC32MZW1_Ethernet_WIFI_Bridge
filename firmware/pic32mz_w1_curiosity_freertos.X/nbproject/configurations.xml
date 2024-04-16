@@ -35,6 +35,7 @@
                 <logicalFolder name="f1" displayName="dynamic" projectFiles="true">
                   <itemPath>../src/config/pic32mz_w1_eth_wifi_freertos/driver/ethphy/src/dynamic/drv_extphy_regs.h</itemPath>
                   <itemPath>../src/config/pic32mz_w1_eth_wifi_freertos/driver/ethphy/src/dynamic/drv_extphy_smsc8740.h</itemPath>
+                  <itemPath>../src/config/pic32mz_w1_eth_wifi_freertos/driver/ethphy/src/dynamic/drv_extphy_lan8740.h</itemPath>
                 </logicalFolder>
                 <itemPath>../src/config/pic32mz_w1_eth_wifi_freertos/driver/ethphy/src/drv_ethphy_local.h</itemPath>
               </logicalFolder>
@@ -44,6 +45,7 @@
               <logicalFolder name="f1" displayName="src" projectFiles="true">
                 <logicalFolder name="f1" displayName="dynamic" projectFiles="true">
                   <itemPath>../src/config/pic32mz_w1_eth_wifi_freertos/driver/miim/src/dynamic/drv_miim_mapping.h</itemPath>
+                  <itemPath>../src/config/pic32mz_w1_eth_wifi_freertos/driver/miim/src/dynamic/drv_miim_device.h</itemPath>
                 </logicalFolder>
                 <itemPath>../src/config/pic32mz_w1_eth_wifi_freertos/driver/miim/src/drv_miim_local.h</itemPath>
               </logicalFolder>
@@ -70,6 +72,8 @@
                   <itemPath>../src/config/pic32mz_w1_eth_wifi_freertos/driver/wifi/pic32mzw1/include/wdrv_pic32mzw_sta.h</itemPath>
                   <itemPath>../src/config/pic32mz_w1_eth_wifi_freertos/driver/wifi/pic32mzw1/include/wdrv_pic32mzw_ps.h</itemPath>
                   <itemPath>../src/config/pic32mz_w1_eth_wifi_freertos/driver/wifi/pic32mzw1/include/wdrv_pic32mzw_custie.h</itemPath>
+                  <itemPath>../src/config/pic32mz_w1_eth_wifi_freertos/driver/wifi/pic32mzw1/include/drv_pic32mzw1_tls.h</itemPath>
+                  <itemPath>../src/config/pic32mz_w1_eth_wifi_freertos/driver/wifi/pic32mzw1/include/wdrv_pic32mzw_ie.h</itemPath>
                 </logicalFolder>
               </logicalFolder>
             </logicalFolder>
@@ -155,6 +159,8 @@
                 <itemPath>../src/config/pic32mz_w1_eth_wifi_freertos/library/tcpip/src/lldp_tlv.h</itemPath>
                 <itemPath>../src/config/pic32mz_w1_eth_wifi_freertos/library/tcpip/src/tcpip_mac_bridge_manager.h</itemPath>
                 <itemPath>../src/config/pic32mz_w1_eth_wifi_freertos/library/tcpip/src/tcpip_mac_bridge_private.h</itemPath>
+                <itemPath>../src/config/pic32mz_w1_eth_wifi_freertos/library/tcpip/src/dhcp_server_private.h</itemPath>
+                <itemPath>../src/config/pic32mz_w1_eth_wifi_freertos/library/tcpip/src/dhcp_server_manager.h</itemPath>
               </logicalFolder>
               <itemPath>../src/config/pic32mz_w1_eth_wifi_freertos/library/tcpip/tcpip_common_ports.h</itemPath>
               <itemPath>../src/config/pic32mz_w1_eth_wifi_freertos/library/tcpip/tcpip_mac.h</itemPath>
@@ -201,6 +207,7 @@
               <itemPath>../src/config/pic32mz_w1_eth_wifi_freertos/library/tcpip/tcpip.h</itemPath>
               <itemPath>../src/config/pic32mz_w1_eth_wifi_freertos/library/tcpip/tcpip_mac_bridge.h</itemPath>
               <itemPath>../src/config/pic32mz_w1_eth_wifi_freertos/library/tcpip/tcpip_ethernet.h</itemPath>
+              <itemPath>../src/config/pic32mz_w1_eth_wifi_freertos/library/tcpip/dhcp_server.h</itemPath>
             </logicalFolder>
           </logicalFolder>
           <logicalFolder name="f5" displayName="net_pres" projectFiles="true">
@@ -281,6 +288,7 @@
           <itemPath>../src/config/pic32mz_w1_eth_wifi_freertos/interrupts.h</itemPath>
           <itemPath>../src/config/pic32mz_w1_eth_wifi_freertos/config.h</itemPath>
           <itemPath>../src/config/pic32mz_w1_eth_wifi_freertos/FreeRTOSConfig.h</itemPath>
+          <itemPath>../src/config/pic32mz_w1_eth_wifi_freertos/sys_tasks.h</itemPath>
         </logicalFolder>
       </logicalFolder>
       <logicalFolder name="f3" displayName="FreeRTOS" projectFiles="true">
@@ -311,6 +319,11 @@
               </logicalFolder>
             </logicalFolder>
           </logicalFolder>
+        </logicalFolder>
+      </logicalFolder>
+      <logicalFolder name="system" displayName="system" projectFiles="true">
+        <logicalFolder name="tmr" displayName="tmr" projectFiles="true">
+          <itemPath>../src/config/pic32mz_w1_eth_wifi_freertos/system/tmr/sys_tmr.h</itemPath>
         </logicalFolder>
       </logicalFolder>
       <logicalFolder name="f2" displayName="wolfcrypt" projectFiles="true">
@@ -449,6 +462,11 @@
         <itemPath>../src/third_party/wolfssl/wolfssl/wolfcrypt/ecc.h</itemPath>
         <itemPath>../src/third_party/wolfssl/wolfssl/wolfcrypt/types.h</itemPath>
         <itemPath>../src/third_party/wolfssl/wolfssl/certs_test.h</itemPath>
+        <itemPath>../src/third_party/wolfssl/wolfssl/wolfcrypt/sakke.h</itemPath>
+        <itemPath>../src/third_party/wolfssl/wolfssl/wolfcrypt/kdf.h</itemPath>
+        <itemPath>../src/third_party/wolfssl/wolfssl/wolfcrypt/eccsi.h</itemPath>
+        <itemPath>../src/third_party/wolfssl/wolfssl/wolfcrypt/siphash.h</itemPath>
+        <itemPath>../src/third_party/wolfssl/wolfssl/wolfcrypt/falcon.h</itemPath>
       </logicalFolder>
       <itemPath>../src/app.h</itemPath>
     </logicalFolder>
@@ -493,6 +511,7 @@
                 <logicalFolder name="f1" displayName="dynamic" projectFiles="true">
                   <itemPath>../src/config/pic32mz_w1_eth_wifi_freertos/driver/ethphy/src/dynamic/drv_ethphy.c</itemPath>
                   <itemPath>../src/config/pic32mz_w1_eth_wifi_freertos/driver/ethphy/src/dynamic/drv_extphy_smsc8740.c</itemPath>
+                  <itemPath>../src/config/pic32mz_w1_eth_wifi_freertos/driver/ethphy/src/dynamic/drv_extphy_lan8740.c</itemPath>
                 </logicalFolder>
               </logicalFolder>
             </logicalFolder>
@@ -500,6 +519,7 @@
               <logicalFolder name="f1" displayName="src" projectFiles="true">
                 <logicalFolder name="f1" displayName="dynamic" projectFiles="true">
                   <itemPath>../src/config/pic32mz_w1_eth_wifi_freertos/driver/miim/src/dynamic/drv_miim.c</itemPath>
+                  <itemPath>../src/config/pic32mz_w1_eth_wifi_freertos/driver/miim/src/dynamic/drv_miim_pic32m.c</itemPath>
                 </logicalFolder>
               </logicalFolder>
             </logicalFolder>
@@ -518,6 +538,8 @@
                 <itemPath>../src/config/pic32mz_w1_eth_wifi_freertos/driver/wifi/pic32mzw1/wdrv_pic32mzw_sta.c</itemPath>
                 <itemPath>../src/config/pic32mz_w1_eth_wifi_freertos/driver/wifi/pic32mzw1/wdrv_pic32mzw_ps.c</itemPath>
                 <itemPath>../src/config/pic32mz_w1_eth_wifi_freertos/driver/wifi/pic32mzw1/wdrv_pic32mzw_custie.c</itemPath>
+                <itemPath>../src/config/pic32mz_w1_eth_wifi_freertos/driver/wifi/pic32mzw1/drv_pic32mzw1_tls.c</itemPath>
+                <itemPath>../src/config/pic32mz_w1_eth_wifi_freertos/driver/wifi/pic32mzw1/wdrv_pic32mzw_ie.c</itemPath>
               </logicalFolder>
             </logicalFolder>
           </logicalFolder>
@@ -546,6 +568,7 @@
                 <itemPath>../src/config/pic32mz_w1_eth_wifi_freertos/library/tcpip/src/udp.c</itemPath>
                 <itemPath>../src/config/pic32mz_w1_eth_wifi_freertos/library/tcpip/src/dnss.c</itemPath>
                 <itemPath>../src/config/pic32mz_w1_eth_wifi_freertos/library/tcpip/src/tcpip_mac_bridge.c</itemPath>
+                <itemPath>../src/config/pic32mz_w1_eth_wifi_freertos/library/tcpip/src/dhcps.c</itemPath>
               </logicalFolder>
             </logicalFolder>
           </logicalFolder>
@@ -734,6 +757,11 @@
         <itemPath>../src/third_party/wolfssl/wolfssl/wolfcrypt/src/sha256.c</itemPath>
         <itemPath>../src/third_party/wolfssl/wolfssl/wolfcrypt/src/sha512.c</itemPath>
         <itemPath>../src/third_party/wolfssl/wolfssl/wolfcrypt/src/ecc.c</itemPath>
+        <itemPath>../src/third_party/wolfssl/wolfssl/wolfcrypt/src/kdf.c</itemPath>
+        <itemPath>../src/third_party/wolfssl/wolfssl/wolfcrypt/src/siphash.c</itemPath>
+        <itemPath>../src/third_party/wolfssl/wolfssl/wolfcrypt/src/sakke.c</itemPath>
+        <itemPath>../src/third_party/wolfssl/wolfssl/wolfcrypt/src/eccsi.c</itemPath>
+        <itemPath>../src/third_party/wolfssl/wolfssl/wolfcrypt/src/falcon.c</itemPath>
       </logicalFolder>
       <itemPath>../src/app.c</itemPath>
       <itemPath>../src/main.c</itemPath>
@@ -811,6 +839,7 @@
       </logicalFolder>
       <itemPath>Makefile</itemPath>
       <itemPath>../src/config/pic32mz_w1_eth_wifi_freertos/harmony-manifest-success.yml</itemPath>
+      <itemPath>pic32mz_w1_curiosity_freertos.mc3</itemPath>
     </logicalFolder>
   </logicalFolder>
   <sourceRootList>
@@ -824,13 +853,13 @@
         <targetDevice>PIC32MZ1025W104132</targetDevice>
         <targetHeader></targetHeader>
         <targetPluginBoard></targetPluginBoard>
-        <platformTool>ICD4Tool</platformTool>
+        <platformTool>pk4hybrid</platformTool>
         <languageToolchain>XC32</languageToolchain>
-        <languageToolchainVersion>3.01</languageToolchainVersion>
+        <languageToolchainVersion>4.30</languageToolchainVersion>
         <platform>3</platform>
       </toolsSet>
       <packs>
-        <pack name="PIC32MZ-W_DFP" vendor="Microchip" version="1.5.203"/>
+        <pack name="PIC32MZ-W_DFP" vendor="Microchip" version="1.8.326"/>
       </packs>
       <ScriptingSettings>
       </ScriptingSettings>
@@ -860,6 +889,24 @@
         <makeCustomizationEnableLongLines>false</makeCustomizationEnableLongLines>
         <makeCustomizationNormalizeHexFile>false</makeCustomizationNormalizeHexFile>
       </makeCustomizationType>
+      <item path="../src/config/pic32mz_w1_eth_wifi_freertos/driver/ethphy/src/dynamic/drv_extphy_smsc8740.c"
+            ex="true"
+            overriding="false">
+        <C32>
+        </C32>
+        <C32-AR>
+        </C32-AR>
+        <C32-AS>
+        </C32-AS>
+        <C32-CO>
+        </C32-CO>
+        <C32-LD>
+        </C32-LD>
+        <C32CPP>
+        </C32CPP>
+        <C32Global>
+        </C32Global>
+      </item>
       <item path="../src/config/pic32mz_w1_eth_wifi_freertos/library/tcpip/src/icmp.c"
             ex="false"
             overriding="true">
@@ -970,6 +1017,7 @@
       <C32>
         <property key="additional-warnings" value="true"/>
         <property key="addresss-attribute-use" value="false"/>
+        <property key="appendMe" value=""/>
         <property key="enable-app-io" value="false"/>
         <property key="enable-omit-frame-pointer" value="false"/>
         <property key="enable-symbols" value="true"/>
@@ -1000,6 +1048,7 @@
         <property key="additional-options-chop-files" value="false"/>
       </C32-AR>
       <C32-AS>
+        <property key="appendMe" value=""/>
         <property key="assembler-symbols" value=""/>
         <property key="enable-symbols" value="true"/>
         <property key="exclude-floating-point-library" value="false"/>
@@ -1029,6 +1078,7 @@
         <property key="additional-options-use-response-files" value="false"/>
         <property key="additional-options-write-sla" value="false"/>
         <property key="allocate-dinit" value="false"/>
+        <property key="appendMe" value=""/>
         <property key="code-dinit" value="false"/>
         <property key="ebase-addr" value=""/>
         <property key="enable-check-sections" value="false"/>
@@ -1053,7 +1103,8 @@
         <property key="map-file" value="${DISTDIR}/${PROJECTNAME}.${IMAGE_TYPE}.map"/>
         <property key="no-device-startup-code" value="true"/>
         <property key="no-startup-files" value="false"/>
-        <property key="oXC32ld-extra-opts" value="-mreserve=prog@0x100ff000:0x100fffff"/>
+        <property key="oXC32ld-extra-opts"
+                  value="-mreserve=prog@0x100FF000:0x100FFFFF;-mreserve=prog@0x100ff000:0x100fffff"/>
         <property key="optimization-level" value=""/>
         <property key="preprocessor-macros" value=""/>
         <property key="remove-unused-sections" value="true"/>
@@ -1068,6 +1119,7 @@
       <C32CPP>
         <property key="additional-warnings" value="false"/>
         <property key="addresss-attribute-use" value="false"/>
+        <property key="appendMe" value=""/>
         <property key="check-new" value="false"/>
         <property key="eh-specs" value="true"/>
         <property key="enable-app-io" value="false"/>
@@ -1153,12 +1205,19 @@
         <property key="UART1" value="true"/>
         <property key="UART2" value="true"/>
         <property key="UART3" value="true"/>
+        <property key="communication.activationmode" value="nohv"/>
+        <property key="communication.interface"
+                  value="${communication.interface.default}"/>
         <property key="communication.interface.jtag" value="2wire"/>
+        <property key="communication.speed" value="${communication.speed.default}"/>
         <property key="debugoptions.debug-startup" value="Use system settings"/>
         <property key="debugoptions.reset-behaviour" value="Use system settings"/>
         <property key="debugoptions.simultaneous.debug" value="false"/>
         <property key="debugoptions.useswbreakpoints" value="false"/>
+        <property key="event.recorder.enabled" value="false"/>
+        <property key="event.recorder.scvd.files" value=""/>
         <property key="hwtoolclock.frcindebug" value="false"/>
+        <property key="lastid" value=""/>
         <property key="memories.aux" value="false"/>
         <property key="memories.bootflash" value="true"/>
         <property key="memories.configurationmemory" value="true"/>
@@ -1332,12 +1391,19 @@
         <property key="UART1" value="true"/>
         <property key="UART2" value="true"/>
         <property key="UART3" value="true"/>
+        <property key="communication.activationmode" value="nohv"/>
+        <property key="communication.interface"
+                  value="${communication.interface.default}"/>
         <property key="communication.interface.jtag" value="2wire"/>
+        <property key="communication.speed" value="${communication.speed.default}"/>
         <property key="debugoptions.debug-startup" value="Use system settings"/>
         <property key="debugoptions.reset-behaviour" value="Use system settings"/>
         <property key="debugoptions.simultaneous.debug" value="false"/>
         <property key="debugoptions.useswbreakpoints" value="false"/>
+        <property key="event.recorder.enabled" value="false"/>
+        <property key="event.recorder.scvd.files" value=""/>
         <property key="hwtoolclock.frcindebug" value="false"/>
+        <property key="lastid" value=""/>
         <property key="memories.aux" value="false"/>
         <property key="memories.bootflash" value="true"/>
         <property key="memories.configurationmemory" value="true"/>

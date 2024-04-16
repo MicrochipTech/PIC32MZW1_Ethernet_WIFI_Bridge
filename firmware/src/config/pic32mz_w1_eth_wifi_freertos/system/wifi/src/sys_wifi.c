@@ -50,6 +50,8 @@ SUBSTITUTE GOODS, TECHNOLOGY, SERVICES, OR ANY CLAIMS BY THIRD PARTIES
 #include "system/wifi/sys_wifi.h"
 #include "configuration.h"
 #include "system/wifiprov/sys_wifiprov.h"
+
+
 // *****************************************************************************
 // *****************************************************************************
 // Section: Type Definitions
@@ -134,6 +136,7 @@ static uint8_t SYS_WIFI_APDisconnectSTA(uint8_t *macAddr);
 static void  SYS_WIFI_WIFIPROVCallBack(uint32_t event, void * data,void *cookie);
 
 
+
 // *****************************************************************************
 // *****************************************************************************
 // Section: Local Functions
@@ -191,6 +194,20 @@ static WDRV_PIC32MZW_ASSOC_HANDLE SYS_WIFI_StaConnAssocIdFromMAC(uint8_t *macAdd
         }
     }
     return WDRV_PIC32MZW_ASSOC_HANDLE_INVALID;
+}
+static uint8_t SYS_WIFI_StaConnIdx()
+{
+    uint8_t idx = 0;
+
+    for(idx = 0; idx < SYS_WIFI_MAX_STA_SUPPORTED; idx++)
+    {
+        if(g_wifiSrvcStaConnInfo[idx].wifiSrvcSTAConnUpdate == true)
+        {
+            g_wifiSrvcStaConnInfo[idx].wifiSrvcSTAConnUpdate = false;
+            return idx;
+        }
+    }
+    return SYS_WIFI_OBJ_INVALID;
 }
 
 static inline void SYS_WIFI_CallBackFun
@@ -320,6 +337,31 @@ static inline void SYS_WIFI_PrintWifiConfig(void)
     }
 
 }
+static void SYS_WIFI_WaitForConnSTAIP(uintptr_t context)
+{
+    TCPIP_NET_HANDLE netHdl = TCPIP_STACK_NetHandleGet("PIC32MZW1");
+    TCPIP_DHCPS_LEASE_HANDLE dhcpsLease = 0;
+    TCPIP_DHCPS_LEASE_ENTRY dhcpsLeaseEntry;
+
+    do
+    {
+        dhcpsLease = TCPIP_DHCPS_LeaseEntryGet(netHdl, &dhcpsLeaseEntry, dhcpsLease);
+        if (0 != dhcpsLease)
+        {
+            SYS_WIFI_STA_CONNECTION_INFO *staConnInfo = (SYS_WIFI_STA_CONNECTION_INFO *)context;
+            if(0 == memcmp(&dhcpsLeaseEntry.hwAdd, staConnInfo->wifiSrvcStaAppInfo.macAddr, WDRV_PIC32MZW_MAC_ADDR_LEN))
+            {               
+                SYS_CONSOLE_PRINT("\r\nConnected STA IP:%d.%d.%d.%d \r\n", dhcpsLeaseEntry.ipAddress.v[0], dhcpsLeaseEntry.ipAddress.v[1], dhcpsLeaseEntry.ipAddress.v[2], dhcpsLeaseEntry.ipAddress.v[3]);
+                staConnInfo->wifiSrvcStaAppInfo.ipAddr.Val = dhcpsLeaseEntry.ipAddress.Val;
+                staConnInfo->wifiSrvcSTAConnUpdate = true; 
+                SYS_WIFI_SetTaskstatus(SYS_WIFI_STATUS_WAIT_FOR_STA_IP);
+                return;
+            }
+        }
+    } while(0 != dhcpsLease);
+
+    SYS_TIME_CallbackRegisterMS(SYS_WIFI_WaitForConnSTAIP, context, 500, SYS_TIME_SINGLE);
+}
 static void SYS_WIFI_APConnCallBack
 (
     DRV_HANDLE handle, 
@@ -347,8 +389,7 @@ static void SYS_WIFI_APConnCallBack
                     {
                         g_wifiSrvcStaConnInfo[idx].wifiSrvcAssocHandle = assocHandle;
                         memcpy(&g_wifiSrvcStaConnInfo[idx].wifiSrvcStaAppInfo.macAddr, wifiSrvcStaConnMac.addr, WDRV_PIC32MZW_MAC_ADDR_LEN);
-                        g_wifiSrvcStaConnInfo[idx].wifiSrvcStaAppInfo.ipAddr.Val = 0;
-                        SYS_WIFI_CallBackFun(SYS_WIFI_CONNECT,&g_wifiSrvcStaConnInfo[idx].wifiSrvcStaAppInfo,g_wifiSrvcCookie);
+                        SYS_TIME_CallbackRegisterMS(SYS_WIFI_WaitForConnSTAIP, (uintptr_t)&g_wifiSrvcStaConnInfo[idx], 500, SYS_TIME_SINGLE);
                         break;
                     }
                 }
@@ -529,11 +570,10 @@ static SYS_WIFI_RESULT SYS_WIFI_ConfigReq(void)
                 }
                 break;
             }
-
             case SYS_WIFI_WEP:
             {
-               ret = SYS_WIFI_CONFIG_FAILURE; 
-              /* Wi-Fi service doesn't support WEP */
+                ret = SYS_WIFI_CONFIG_FAILURE; 
+                /* Wi-Fi service doesn't support WEP */
                 break;
             }
 
@@ -589,6 +629,8 @@ static uint32_t SYS_WIFI_ExecuteBlock
     SYS_WIFI_OBJ *               wifiSrvcObj = (SYS_WIFI_OBJ *) object;
     uint8_t                      ret =  SYS_WIFIPROV_OBJ_INVALID;
 
+    IPV4_ADDR                    apLastIp = {-1};
+    IPV4_ADDR                    apIpAddr;
  
     if (&g_wifiSrvcObj == (SYS_WIFI_OBJ*) wifiSrvcObj)
     {    
@@ -680,6 +722,8 @@ static uint32_t SYS_WIFI_ExecuteBlock
                         {
                             TCPIP_DHCP_Disable(netHdl);
                         }
+                        /* Enable DHCP Server in AP mode */
+                        TCPIP_DHCPS_Enable(netHdl);
                     }                
                     wifiSrvcObj->wifiSrvcStatus = SYS_WIFI_STATUS_CONNECT_REQ;
                     OSAL_SEM_Post(&g_wifiSrvcSemaphore);
@@ -695,9 +739,11 @@ static uint32_t SYS_WIFI_ExecuteBlock
                     {
                         if (SYS_WIFI_SUCCESS == SYS_WIFI_ConfigReq()) 
                         {
+						
+
                             if (SYS_WIFI_SUCCESS == SYS_WIFI_ConnectReq()) 
                             {
-                                wifiSrvcObj->wifiSrvcStatus = SYS_WIFI_STATUS_TCPIP_READY;
+                                wifiSrvcObj->wifiSrvcStatus = SYS_WIFI_STATUS_WAIT_FOR_AP_IP;
                             }
                         }
                     }
@@ -707,6 +753,51 @@ static uint32_t SYS_WIFI_ExecuteBlock
             }
 
 
+            case SYS_WIFI_STATUS_WAIT_FOR_AP_IP:
+            {
+                apIpAddr.Val = TCPIP_STACK_NetAddress(netHdl);
+                if (apLastIp.Val != apIpAddr.Val)
+                {
+                    if (OSAL_RESULT_TRUE == OSAL_SEM_Pend(&g_wifiSrvcSemaphore, OSAL_WAIT_FOREVER)) 
+                    {
+                        apLastIp.Val = apIpAddr.Val;
+                        SYS_CONSOLE_MESSAGE(TCPIP_STACK_NetNameGet(netHdl));
+                        SYS_CONSOLE_MESSAGE(" AP Mode IP Address: ");
+                        SYS_CONSOLE_PRINT("%d.%d.%d.%d \r\n", apIpAddr.v[0], apIpAddr.v[1], apIpAddr.v[2], apIpAddr.v[3]);
+                        wifiSrvcObj->wifiSrvcStatus = SYS_WIFI_STATUS_TCPIP_READY;
+                        OSAL_SEM_Post(&g_wifiSrvcSemaphore);
+
+                        /* In AP mode, Update AP mode start event to
+                            Wi-Fi Provisioning service.Wi-Fi Provisioning
+                            service has to open TCP server */
+                        bool provConnStatus = true;
+                        SYS_WIFIPROV_CtrlMsg(g_wifiSrvcProvObj, SYS_WIFIPROV_CONNECT, &provConnStatus, sizeof (bool));
+                    }
+                }
+                break;
+            }
+            case SYS_WIFI_STATUS_WAIT_FOR_STA_IP:
+            {
+                uint8_t staConnIdx = SYS_WIFI_OBJ_INVALID;
+                if (OSAL_RESULT_TRUE == OSAL_SEM_Pend(&g_wifiSrvcSemaphore, 
+                                        OSAL_WAIT_FOREVER))
+                {
+                    staConnIdx = SYS_WIFI_StaConnIdx();
+                    OSAL_SEM_Post(&g_wifiSrvcSemaphore);
+                }    
+                if(SYS_WIFI_OBJ_INVALID != staConnIdx)
+                {
+                    /* updates the application with received STA IP address*/
+                    SYS_WIFI_CallBackFun(SYS_WIFI_CONNECT, 
+                    &g_wifiSrvcStaConnInfo[staConnIdx].wifiSrvcStaAppInfo, 
+                    g_wifiSrvcCookie);
+                }
+                else
+                {
+                    SYS_WIFI_SetTaskstatus(SYS_WIFI_STATUS_TCPIP_READY);
+                }                   
+                break;
+            }
             case SYS_WIFI_STATUS_TCPIP_READY:
             {
                 break;

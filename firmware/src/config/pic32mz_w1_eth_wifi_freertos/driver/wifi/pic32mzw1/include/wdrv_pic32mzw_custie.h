@@ -12,33 +12,33 @@
 
   Description:
     This file provides an interface for manipulating the vendor specific 
-    information element store. Custom VSIE's can be included in the Soft-AP
-    beacons and probe responses.
- *******************************************************************************/
+    information element store. Custom IE's can be added to management frames and
+    also IEs can be received from management frames.
+ ******************************************************************************/
 
 // DOM-IGNORE-BEGIN
-/*******************************************************************************
-Copyright (C) 2021 released Microchip Technology Inc. All rights reserved.
+/*
+Copyright (C) 2020-2023, Microchip Technology Inc., and its subsidiaries. All rights reserved.
 
-Microchip licenses to you the right to use, modify, copy and distribute
-Software only when embedded on a Microchip microcontroller or digital signal
-controller that is integrated into your product or third party product
-(pursuant to the sublicense terms in the accompanying license agreement).
+The software and documentation is provided by microchip and its contributors
+"as is" and any express, implied or statutory warranties, including, but not
+limited to, the implied warranties of merchantability, fitness for a particular
+purpose and non-infringement of third party intellectual property rights are
+disclaimed to the fullest extent permitted by law. In no event shall microchip
+or its contributors be liable for any direct, indirect, incidental, special,
+exemplary, or consequential damages (including, but not limited to, procurement
+of substitute goods or services; loss of use, data, or profits; or business
+interruption) however caused and on any theory of liability, whether in contract,
+strict liability, or tort (including negligence or otherwise) arising in any way
+out of the use of the software and documentation, even if advised of the
+possibility of such damage.
 
-You should refer to the license agreement accompanying this Software for
-additional information regarding your rights and obligations.
-
-SOFTWARE AND DOCUMENTATION ARE PROVIDED AS IS WITHOUT WARRANTY OF ANY KIND,
-EITHER EXPRESS OR IMPLIED, INCLUDING WITHOUT LIMITATION, ANY WARRANTY OF
-MERCHANTABILITY, TITLE, NON-INFRINGEMENT AND FITNESS FOR A PARTICULAR PURPOSE.
-IN NO EVENT SHALL MICROCHIP OR ITS LICENSORS BE LIABLE OR OBLIGATED UNDER
-CONTRACT, NEGLIGENCE, STRICT LIABILITY, CONTRIBUTION, BREACH OF WARRANTY, OR
-OTHER LEGAL EQUITABLE THEORY ANY DIRECT OR INDIRECT DAMAGES OR EXPENSES
-INCLUDING BUT NOT LIMITED TO ANY INCIDENTAL, SPECIAL, INDIRECT, PUNITIVE OR
-CONSEQUENTIAL DAMAGES, LOST PROFITS OR LOST DATA, COST OF PROCUREMENT OF
-SUBSTITUTE GOODS, TECHNOLOGY, SERVICES, OR ANY CLAIMS BY THIRD PARTIES
-(INCLUDING BUT NOT LIMITED TO ANY DEFENSE THEREOF), OR OTHER SIMILAR COSTS.
- *******************************************************************************/
+Except as expressly permitted hereunder and subject to the applicable license terms
+for any third-party software incorporated in the software and any applicable open
+source software license terms, no license or other rights, whether express or
+implied, are granted under any patent or other intellectual property rights of
+Microchip or any third party.
+*/
 // DOM-IGNORE-END
 
 #ifndef _WDRV_PIC32MZW_CUSTIE_H
@@ -55,13 +55,13 @@ SUBSTITUTE GOODS, TECHNOLOGY, SERVICES, OR ANY CLAIMS BY THIRD PARTIES
 
 // *****************************************************************************
 // *****************************************************************************
-// Section: PIC32MZW Driver Custom IE Data Types
+// Section: PIC32MZW Driver Custom IE Store Context Data Types
 // *****************************************************************************
 // *****************************************************************************
 
-#define WDRV_PIC32MZW_CUSTIE_MAX_STORAGE_LEN    DRV_PIC32MZW_MAX_VSIE_DATA_LEN
-#define WDRV_PIC32MZW_CUSTIE_MIN_STORAGE_LEN    DRV_PIC32MZW_VSIE_DATA_SIZE_FIELD_LEN
-#define WDRV_PIC32MZW_CUSTIE_DATA_OFFSET        DRV_PIC32MZW_VSIE_DATA_SIZE_FIELD_LEN
+#define WDRV_PIC32MZW_CUSTIE_MAX_STORAGE_LEN    DRV_PIC32MZW_IE_DATA_LEN_MAX
+#define WDRV_PIC32MZW_CUSTIE_MIN_STORAGE_LEN    DRV_PIC32MZW_IE_DATA_SIZE_FIELD_LEN
+#define WDRV_PIC32MZW_CUSTIE_DATA_OFFSET        DRV_PIC32MZW_IE_DATA_SIZE_FIELD_LEN
 
 
 // *****************************************************************************
@@ -117,11 +117,11 @@ typedef struct
 
 // *****************************************************************************
 // *****************************************************************************
-// Section: PIC32MZW Driver Custom IE Routines
+// Section: PIC32MZW Driver Custom IE Store Context Routines
 // *****************************************************************************
 // *****************************************************************************
 
-//*******************************************************************************
+//******************************************************************************
 /*
   Function:
     WDRV_PIC32MZW_CUST_IE_STORE_CONTEXT* WDRV_PIC32MZW_CustIEStoreCtxSetStorage
@@ -134,9 +134,10 @@ typedef struct
     Initialize the custom IE store.
 
   Description:
-    The caller provides storage for the custom IE store, this will be initialized
-    and a pointer provided which can be passed to WDRV_PIC32MZW_APSetCustIE
-    after custom IEs are added by WDRV_PIC32MZW_CustIEStoreCtxAddIE.
+    The caller provides storage/memory for the custom IE store, this will be
+    initialized and store context pointer will be provided which can be passed
+    to WDRV_PIC32MZW_CustIESetTxData after custom IEs are added by
+    WDRV_PIC32MZW_CustIEStoreCtxAddIE.
 
   Precondition:
     None.
@@ -153,8 +154,7 @@ typedef struct
     <= WDRV_PIC32MZW_CUSTIE_MAX_STORAGE_LEN + WDRV_PIC32MZW_CUSTIE_DATA_OFFSET).
     If less than WDRV_PIC32MZW_CUSTIE_MIN_STORAGE_LEN an error will be signalled,
     if more than WDRV_PIC32MZW_CUSTIE_MAX_STORAGE_LEN + WDRV_PIC32MZW_CUSTIE_DATA_OFFSET
-    then WDRV_PIC32MZW_CUSTIE_MAX_STORAGE_LEN + WDRV_PIC32MZW_CUSTIE_DATA_OFFSET
-    bytes will be used.
+    then WDRV_PIC32MZW_CUSTIE_MAX_STORAGE_LEN bytes will be used.
 
 */
 
@@ -164,7 +164,7 @@ WDRV_PIC32MZW_CUST_IE_STORE_CONTEXT* WDRV_PIC32MZW_CustIEStoreCtxSetStorage
     uint16_t lenStorage
 );
 
-//*******************************************************************************
+//******************************************************************************
 /*
   Function:
     WDRV_PIC32MZW_STATUS WDRV_PIC32MZW_CustIEStoreCtxAddIE

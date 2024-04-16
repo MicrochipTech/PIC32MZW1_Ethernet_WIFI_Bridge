@@ -12,28 +12,28 @@
  *******************************************************************************/
 
 //DOM-IGNORE-BEGIN
-/*******************************************************************************
-Copyright (C) 2020-21 released Microchip Technology Inc.  All rights reserved.
+/*
+Copyright (C) 2020-2023, Microchip Technology Inc., and its subsidiaries. All rights reserved.
 
-Microchip licenses to you the right to use, modify, copy and distribute
-Software only when embedded on a Microchip microcontroller or digital signal
-controller that is integrated into your product or third party product
-(pursuant to the sublicense terms in the accompanying license agreement).
+The software and documentation is provided by microchip and its contributors
+"as is" and any express, implied or statutory warranties, including, but not
+limited to, the implied warranties of merchantability, fitness for a particular
+purpose and non-infringement of third party intellectual property rights are
+disclaimed to the fullest extent permitted by law. In no event shall microchip
+or its contributors be liable for any direct, indirect, incidental, special,
+exemplary, or consequential damages (including, but not limited to, procurement
+of substitute goods or services; loss of use, data, or profits; or business
+interruption) however caused and on any theory of liability, whether in contract,
+strict liability, or tort (including negligence or otherwise) arising in any way
+out of the use of the software and documentation, even if advised of the
+possibility of such damage.
 
-You should refer to the license agreement accompanying this Software for
-additional information regarding your rights and obligations.
-
-SOFTWARE AND DOCUMENTATION ARE PROVIDED AS IS WITHOUT WARRANTY OF ANY KIND,
-EITHER EXPRESS OR IMPLIED, INCLUDING WITHOUT LIMITATION, ANY WARRANTY OF
-MERCHANTABILITY, TITLE, NON-INFRINGEMENT AND FITNESS FOR A PARTICULAR PURPOSE.
-IN NO EVENT SHALL MICROCHIP OR ITS LICENSORS BE LIABLE OR OBLIGATED UNDER
-CONTRACT, NEGLIGENCE, STRICT LIABILITY, CONTRIBUTION, BREACH OF WARRANTY, OR
-OTHER LEGAL EQUITABLE THEORY ANY DIRECT OR INDIRECT DAMAGES OR EXPENSES
-INCLUDING BUT NOT LIMITED TO ANY INCIDENTAL, SPECIAL, INDIRECT, PUNITIVE OR
-CONSEQUENTIAL DAMAGES, LOST PROFITS OR LOST DATA, COST OF PROCUREMENT OF
-SUBSTITUTE GOODS, TECHNOLOGY, SERVICES, OR ANY CLAIMS BY THIRD PARTIES
-(INCLUDING BUT NOT LIMITED TO ANY DEFENSE THEREOF), OR OTHER SIMILAR COSTS.
- *******************************************************************************/
+Except as expressly permitted hereunder and subject to the applicable license terms
+for any third-party software incorporated in the software and any applicable open
+source software license terms, no license or other rights, whether express or
+implied, are granted under any patent or other intellectual property rights of
+Microchip or any third party.
+*/
 //DOM-IGNORE-END
 
 // *****************************************************************************
@@ -234,6 +234,9 @@ WDRV_PIC32MZW_STATUS WDRV_PIC32MZW_BSSFindFirst
     if (false == DRV_PIC32MZW_MultiWid_Write(&wids))
     {
         OSAL_CRIT_Leave(OSAL_CRIT_TYPE_LOW, critSect);
+
+        DRV_PIC32MZW_MultiWIDDestroy(&wids);
+
         return WDRV_PIC32MZW_STATUS_REQUEST_ERROR;
     }
 
@@ -516,6 +519,13 @@ WDRV_PIC32MZW_STATUS WDRV_PIC32MZW_BSSFindGetInfo
         ||  !(dot11iInfo & DRV_PIC32MZW_11I_RSNE)
     )
     {
+#ifdef WDRV_PIC32MZW_ENTERPRISE_SUPPORT
+        if (dot11iInfo & DRV_PIC32MZW_11I_1X)
+        {
+            pBSSInfo->authTypeRecommended = WDRV_PIC32MZW_AUTH_TYPE_WPAWPA2_ENTERPRISE;
+        }
+        else
+#endif
         if (dot11iInfo & DRV_PIC32MZW_11I_PSK)
         {
             pBSSInfo->authTypeRecommended = WDRV_PIC32MZW_AUTH_TYPE_WPAWPA2_PERSONAL;
@@ -525,13 +535,32 @@ WDRV_PIC32MZW_STATUS WDRV_PIC32MZW_BSSFindGetInfo
     else if (dot11iInfo & DRV_PIC32MZW_11I_CCMP128)
     {
         /* WPA3-Personal if available. */
-#ifdef WDRV_PIC32MZW_WPA3_SUPPORT
+#ifdef WDRV_PIC32MZW_WPA3_PERSONAL_SUPPORT
         if (
                 (dot11iInfo & DRV_PIC32MZW_11I_SAE)
             &&  (dot11iInfo & DRV_PIC32MZW_11I_BIPCMAC128)
         )
         {
             pBSSInfo->authTypeRecommended = WDRV_PIC32MZW_AUTH_TYPE_WPA3_PERSONAL;
+        }
+        else
+#endif
+        /* Otherwise Enterprise if available. */
+#ifdef WDRV_PIC32MZW_ENTERPRISE_SUPPORT
+        if (dot11iInfo & DRV_PIC32MZW_11I_1X)
+        {
+            /* If AP _requires_ MFP then we can use WPA3-only.               */
+            /* Note that MFP _capability_ is not sufficient - that does not  */
+            /* guarantee support for AKM suite 5.                            */
+            if (dot11iInfo & DRV_PIC32MZW_11I_MFP_REQUIRED)
+            {
+                pBSSInfo->authTypeRecommended = WDRV_PIC32MZW_AUTH_TYPE_WPA3_ENTERPRISE;
+            }
+            /* Otherwise WPA3-only might not work, so use WPA3 transition. */
+            else
+            {
+                pBSSInfo->authTypeRecommended = WDRV_PIC32MZW_AUTH_TYPE_WPA2WPA3_ENTERPRISE;
+            }
         }
         else
 #endif
@@ -751,6 +780,9 @@ WDRV_PIC32MZW_STATUS WDRV_PIC32MZW_BSSFindSetScanMatchMode
     if (false == DRV_PIC32MZW_MultiWid_Write(&wids))
     {
         OSAL_CRIT_Leave(OSAL_CRIT_TYPE_LOW, critSect);
+
+        DRV_PIC32MZW_MultiWIDDestroy(&wids);
+
         return WDRV_PIC32MZW_STATUS_REQUEST_ERROR;
     }
 

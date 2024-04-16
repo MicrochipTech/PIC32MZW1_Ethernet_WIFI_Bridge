@@ -13,28 +13,28 @@
  *******************************************************************************/
 
 //DOM-IGNORE-BEGIN
-/*******************************************************************************
-Copyright (C) 2020-21 released Microchip Technology Inc.  All rights reserved.
+/*
+Copyright (C) 2020-2023, Microchip Technology Inc., and its subsidiaries. All rights reserved.
 
-Microchip licenses to you the right to use, modify, copy and distribute
-Software only when embedded on a Microchip microcontroller or digital signal
-controller that is integrated into your product or third party product
-(pursuant to the sublicense terms in the accompanying license agreement).
+The software and documentation is provided by microchip and its contributors
+"as is" and any express, implied or statutory warranties, including, but not
+limited to, the implied warranties of merchantability, fitness for a particular
+purpose and non-infringement of third party intellectual property rights are
+disclaimed to the fullest extent permitted by law. In no event shall microchip
+or its contributors be liable for any direct, indirect, incidental, special,
+exemplary, or consequential damages (including, but not limited to, procurement
+of substitute goods or services; loss of use, data, or profits; or business
+interruption) however caused and on any theory of liability, whether in contract,
+strict liability, or tort (including negligence or otherwise) arising in any way
+out of the use of the software and documentation, even if advised of the
+possibility of such damage.
 
-You should refer to the license agreement accompanying this Software for
-additional information regarding your rights and obligations.
-
-SOFTWARE AND DOCUMENTATION ARE PROVIDED AS IS WITHOUT WARRANTY OF ANY KIND,
-EITHER EXPRESS OR IMPLIED, INCLUDING WITHOUT LIMITATION, ANY WARRANTY OF
-MERCHANTABILITY, TITLE, NON-INFRINGEMENT AND FITNESS FOR A PARTICULAR PURPOSE.
-IN NO EVENT SHALL MICROCHIP OR ITS LICENSORS BE LIABLE OR OBLIGATED UNDER
-CONTRACT, NEGLIGENCE, STRICT LIABILITY, CONTRIBUTION, BREACH OF WARRANTY, OR
-OTHER LEGAL EQUITABLE THEORY ANY DIRECT OR INDIRECT DAMAGES OR EXPENSES
-INCLUDING BUT NOT LIMITED TO ANY INCIDENTAL, SPECIAL, INDIRECT, PUNITIVE OR
-CONSEQUENTIAL DAMAGES, LOST PROFITS OR LOST DATA, COST OF PROCUREMENT OF
-SUBSTITUTE GOODS, TECHNOLOGY, SERVICES, OR ANY CLAIMS BY THIRD PARTIES
-(INCLUDING BUT NOT LIMITED TO ANY DEFENSE THEREOF), OR OTHER SIMILAR COSTS.
- *******************************************************************************/
+Except as expressly permitted hereunder and subject to the applicable license terms
+for any third-party software incorporated in the software and any applicable open
+source software license terms, no license or other rights, whether express or
+implied, are granted under any patent or other intellectual property rights of
+Microchip or any third party.
+*/
 //DOM-IGNORE-END
 
 // *****************************************************************************
@@ -160,6 +160,60 @@ WDRV_PIC32MZW_STATUS WDRV_PIC32MZW_AssocPeerAddressGet
 //*******************************************************************************
 /*
   Function:
+    WDRV_PIC32MZW_STATUS WDRV_PIC32MZW_AssocTransitionDisableGet
+    (
+        WDRV_PIC32MZW_ASSOC_HANDLE assocHandle,
+        bool *const pTransitionDisable
+    )
+
+  Summary:
+    Determine whether transition algorithms should be disabled for this network.
+
+  Description:
+    Determines whether a WPA3 transition disable element was sent by the device
+      (if the device is in AP mode) or received from the peer AP (if the device
+      is in STA mode) during the 4-way handshake of the current association.
+
+  Remarks:
+    See wdrv_pic32mzw_assoc.h for usage information.
+
+*/
+
+WDRV_PIC32MZW_STATUS WDRV_PIC32MZW_AssocTransitionDisableGet
+(
+    WDRV_PIC32MZW_ASSOC_HANDLE assocHandle,
+    bool *const pTransitionDisable
+)
+{
+    WDRV_PIC32MZW_CTRLDCPT *pCtrl;
+    WDRV_PIC32MZW_ASSOC_INFO *const pAssocInfo = (WDRV_PIC32MZW_ASSOC_INFO *const)assocHandle;
+
+    if ((WDRV_PIC32MZW_ASSOC_HANDLE_INVALID == assocHandle) || (NULL == pAssocInfo) || (NULL == pTransitionDisable))
+    {
+        return WDRV_PIC32MZW_STATUS_INVALID_ARG;
+    }
+
+    pCtrl = (WDRV_PIC32MZW_CTRLDCPT*)pAssocInfo->handle;
+
+    if ((DRV_HANDLE_INVALID == pAssocInfo->handle) || (NULL == pCtrl))
+    {
+        return WDRV_PIC32MZW_STATUS_NOT_CONNECTED;
+    }
+
+    /* Ensure the association handle is valid. */
+    if (false == _WDRV_PIC32MZW_AssocHandleIsValid(pCtrl, pAssocInfo))
+    {
+        return WDRV_PIC32MZW_STATUS_REQUEST_ERROR;
+    }
+
+    *pTransitionDisable = pAssocInfo->transitionDisable;
+
+    return WDRV_PIC32MZW_STATUS_OK;
+}
+
+//*******************************************************************************
+/*
+  Function:
     WDRV_PIC32MZW_STATUS WDRV_PIC32MZW_AssocRSSIGet
     (
         WDRV_PIC32MZW_ASSOC_HANDLE assocHandle,
@@ -262,6 +316,9 @@ WDRV_PIC32MZW_STATUS WDRV_PIC32MZW_AssocRSSIGet
             if (false == DRV_PIC32MZW_MultiWid_Write(&wids))
             {
                 OSAL_CRIT_Leave(OSAL_CRIT_TYPE_LOW, critSect);
+
+                DRV_PIC32MZW_MultiWIDDestroy(&wids);
+
                 return WDRV_PIC32MZW_STATUS_REQUEST_ERROR;
             }
 
@@ -291,6 +348,8 @@ WDRV_PIC32MZW_STATUS WDRV_PIC32MZW_AssocRSSIGet
 
   Description:
     Disconnects the STA associated with AP referred by the input association handle.
+    Association handle is updated to the application whenever a new STA is connected to the softAP
+    This API can also be used in STA mode to disconnect the STA from an AP.
 
   Remarks:
     See wdrv_pic32mzw_softap.h for usage information.
@@ -363,6 +422,9 @@ WDRV_PIC32MZW_STATUS WDRV_PIC32MZW_AssocDisconnect(WDRV_PIC32MZW_ASSOC_HANDLE as
     if (false == DRV_PIC32MZW_MultiWid_Write(&wids))
     {
         OSAL_CRIT_Leave(OSAL_CRIT_TYPE_LOW, critSect);
+
+        DRV_PIC32MZW_MultiWIDDestroy(&wids);
+
         return WDRV_PIC32MZW_STATUS_DISCONNECT_FAIL;
     }
 

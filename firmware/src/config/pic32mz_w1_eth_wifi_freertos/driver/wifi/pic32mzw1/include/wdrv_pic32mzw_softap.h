@@ -15,28 +15,28 @@
  *******************************************************************************/
 
 // DOM-IGNORE-BEGIN
-/*******************************************************************************
-Copyright (C) 2020-21 released Microchip Technology Inc. All rights reserved.
+/*
+Copyright (C) 2020-2023, Microchip Technology Inc., and its subsidiaries. All rights reserved.
 
-Microchip licenses to you the right to use, modify, copy and distribute
-Software only when embedded on a Microchip microcontroller or digital signal
-controller that is integrated into your product or third party product
-(pursuant to the sublicense terms in the accompanying license agreement).
+The software and documentation is provided by microchip and its contributors
+"as is" and any express, implied or statutory warranties, including, but not
+limited to, the implied warranties of merchantability, fitness for a particular
+purpose and non-infringement of third party intellectual property rights are
+disclaimed to the fullest extent permitted by law. In no event shall microchip
+or its contributors be liable for any direct, indirect, incidental, special,
+exemplary, or consequential damages (including, but not limited to, procurement
+of substitute goods or services; loss of use, data, or profits; or business
+interruption) however caused and on any theory of liability, whether in contract,
+strict liability, or tort (including negligence or otherwise) arising in any way
+out of the use of the software and documentation, even if advised of the
+possibility of such damage.
 
-You should refer to the license agreement accompanying this Software for
-additional information regarding your rights and obligations.
-
-SOFTWARE AND DOCUMENTATION ARE PROVIDED AS IS WITHOUT WARRANTY OF ANY KIND,
-EITHER EXPRESS OR IMPLIED, INCLUDING WITHOUT LIMITATION, ANY WARRANTY OF
-MERCHANTABILITY, TITLE, NON-INFRINGEMENT AND FITNESS FOR A PARTICULAR PURPOSE.
-IN NO EVENT SHALL MICROCHIP OR ITS LICENSORS BE LIABLE OR OBLIGATED UNDER
-CONTRACT, NEGLIGENCE, STRICT LIABILITY, CONTRIBUTION, BREACH OF WARRANTY, OR
-OTHER LEGAL EQUITABLE THEORY ANY DIRECT OR INDIRECT DAMAGES OR EXPENSES
-INCLUDING BUT NOT LIMITED TO ANY INCIDENTAL, SPECIAL, INDIRECT, PUNITIVE OR
-CONSEQUENTIAL DAMAGES, LOST PROFITS OR LOST DATA, COST OF PROCUREMENT OF
-SUBSTITUTE GOODS, TECHNOLOGY, SERVICES, OR ANY CLAIMS BY THIRD PARTIES
-(INCLUDING BUT NOT LIMITED TO ANY DEFENSE THEREOF), OR OTHER SIMILAR COSTS.
- *******************************************************************************/
+Except as expressly permitted hereunder and subject to the applicable license terms
+for any third-party software incorporated in the software and any applicable open
+source software license terms, no license or other rights, whether express or
+implied, are granted under any patent or other intellectual property rights of
+Microchip or any third party.
+*/
 // DOM-IGNORE-END
 
 #ifndef _WDRV_PIC32MZW_SOFTAP_H
@@ -100,7 +100,8 @@ SUBSTITUTE GOODS, TECHNOLOGY, SERVICES, OR ANY CLAIMS BY THIRD PARTIES
     WDRV_PIC32MZW_STATUS_INVALID_CONTEXT - The BSS context is not valid.
 
   Remarks:
-    None.
+    If pBSSCtx and pAuthCtx are both NULL then no AP will be established, however the
+    pfNotifyCallback callback will still be accepted, even if an AP is active.
 
 */
 
@@ -137,7 +138,10 @@ WDRV_PIC32MZW_STATUS WDRV_PIC32MZW_APStart
     WDRV_PIC32MZW_STATUS_REQUEST_ERROR - The request to the PIC32MZW was rejected.
 
   Remarks:
-    None.
+    The AP stopping will be confirmed via the notification callback registered
+    by WDRV_PIC32MZW_APStart. The callback will receive the association handle
+    WDRV_PIC32MZW_ASSOC_HANDLE_ALL to signify that all STA associations have been
+    disconnected.
 
 */
 
@@ -156,8 +160,8 @@ WDRV_PIC32MZW_STATUS WDRV_PIC32MZW_APStop(DRV_HANDLE handle);
     Configures the group re-key interval used when operating in Soft-AP mode
 
   Description:
-    The re-key interval specifies how much time must elapse before a group re-key 
-    is initiated with connected stations. 
+    The re-key interval specifies how much time must elapse before a group re-key
+    is initiated with connected stations.
     The timer is restarted after each group re-key.
 
   Precondition:
@@ -166,7 +170,7 @@ WDRV_PIC32MZW_STATUS WDRV_PIC32MZW_APStop(DRV_HANDLE handle);
 
   Parameters:
     handle - Client handle obtained by a call to WDRV_PIC32MZW_Open.
-    interval - The time in seconds that must pass before each re-key attempt. 
+    interval - The time in seconds that must pass before each re-key attempt.
                The minimum time value is 60 seconds.
                Defaults to 86400.
 
@@ -178,7 +182,7 @@ WDRV_PIC32MZW_STATUS WDRV_PIC32MZW_APStop(DRV_HANDLE handle);
 
   Remarks:
     Takes effect after the next re-key - if an interval other than the default is
-    desired then it is recommended to call this API before calling 
+    desired then it is recommended to call this API before calling
     WDRV_PIC32MZW_APStart.
 
 */
@@ -186,47 +190,6 @@ WDRV_PIC32MZW_STATUS WDRV_PIC32MZW_APStop(DRV_HANDLE handle);
 WDRV_PIC32MZW_STATUS WDRV_PIC32MZW_APRekeyIntervalSet(
     DRV_HANDLE handle,
     const uint32_t interval
-);
-
-//*******************************************************************************
-/*
-  Function:
-    WDRV_PIC32MZW_STATUS WDRV_PIC32MZW_APSetCustIE
-    (
-        DRV_HANDLE handle,
-        const WDRV_PIC32MZW_CUST_IE_STORE_CONTEXT *const pCustIECtx
-    )
-
-  Summary:
-    Configures the custom IE.
-
-  Description:
-    Soft-AP beacons may contain an application provided custom IE. This function
-    associates a custom IE store context with the Soft-AP instance.
-
-  Precondition:
-    WDRV_PIC32MZW_Initialize should have been called.
-    WDRV_PIC32MZW_Open should have been called to obtain a valid handle.
-
-  Parameters:
-    handle     - Client handle obtained by a call to WDRV_PIC32MZW_Open.
-    pCustIECtx - Pointer to custom IE store context.
-
-  Returns:
-    WDRV_PIC32MZW_STATUS_OK            - The request has been accepted.
-    WDRV_PIC32MZW_STATUS_NOT_OPEN      - The driver instance is not open.
-    WDRV_PIC32MZW_STATUS_INVALID_ARG   - The parameters were incorrect.
-    WDRV_PIC32MZW_STATUS_REQUEST_ERROR - The request to the PIC32MZW was rejected.
-
-  Remarks:
-    None.
-
-*/
-
-WDRV_PIC32MZW_STATUS WDRV_PIC32MZW_APSetCustIE
-(
-    DRV_HANDLE handle,
-    const WDRV_PIC32MZW_CUST_IE_STORE_CONTEXT *const pCustIECtx
 );
 
 #endif /* _WDRV_PIC32MZW_SOFTAP_H */
